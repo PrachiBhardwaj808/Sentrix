@@ -406,21 +406,7 @@ GeoLens measures system performance against non-fabricated operational benchmark
 
 ---
 
-## 14. Development Roadmap
 
-```
-[Phase 1: Q2 2026] Core District Infrastructure
-  - Complete PostGIS spatial query optimization for 1,000+ camera nodes.
-  - Implement automated DBSCAN spatial clustering for crash blackspot detection.
-
-[Phase 2: Q3 2026] Citizen Intake & Mobile Dispatch
-  - Deploy public web portal for consented missing-child intake.
-  - Release Progressive Web App (PWA) for field responder OTP validation.
-
-[Phase 3: Q4 2026] Multi-District Federation
-  - Enable inter-district cross-camera vehicle tracking across NCR borders.
-  - Expand edge inference support for NVIDIA Jetson and ONNX Runtime backends.
-```
 
 ---
 
@@ -436,15 +422,6 @@ GeoLens measures system performance against non-fabricated operational benchmark
 
 ---
 
-### Contributing
-
-Contributions are welcome. Please follow these guidelines:
-
-1. Fork the repository and create a feature branch (`git checkout -b feature/SpatialAnalysis`).
-2. Ensure `npm run typecheck` passes with zero errors before submitting PRs.
-3. Open a Pull Request detailing the changes and relevant test cases.
-
----
 
 ### License
 
@@ -464,11 +441,4 @@ GeoLens incorporates open-source libraries and public frameworks:
 
 ---
 
-### Team
 
-**Event**: MyBharat "Hack for Social Cause"  
-**Theme**: AI, GIS & Emerging Technologies  
-**Team Name**: `[TEAM NAME]`  
-**Team Members**: `[MEMBER NAMES]`  
-
-*GeoLens - See Risks. Map Impact. Respond Faster.*
