@@ -1,0 +1,4 @@
+# Django-side cloud evidence and blockchain worker dependencies.
+requests>=2.32,<3.0
+web3>=7.0,<8.0
+firebase-admin>=6.5,<7.0

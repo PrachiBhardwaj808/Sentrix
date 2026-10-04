@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.localdata/api_state.json
+.localdata/django.sqlite3
+tests/__pycache__/
+.git/

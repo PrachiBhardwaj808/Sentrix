@@ -1,0 +1,60 @@
+services:
+  media-relay:
+    image: bluenviron/mediamtx:latest
+    container_name: borderlens-media-relay
+    restart: unless-stopped
+    ports:
+      - "8554:8554" # RTSP ingest
+      - "8888:8888" # HLS playback
+      - "8889:8889" # WebRTC playback
+    expose:
+      - "9997" # MediaMTX API, backend-only on the Compose network
+    volumes:
+      - ./docker/mediamtx.yml:/mediamtx.yml:ro
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        INSTALL_AI: "true"
+    container_name: borderlens-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
+      CORS_ALLOW_ALL_ORIGINS: "true"
+      MEDIA_RELAY_BASE_URL: http://media-relay:8888
+      MEDIA_RELAY_WEBRTC_URL: http://media-relay:8889
+      MEDIA_RELAY_API_URL: http://media-relay:9997
+      MEDIA_RELAY_ENABLED: "true"
+      AI_DEVICE: cpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/.localdata:/app/.localdata
+    depends_on:
+      - media-relay
+    command: >-
+      sh -c "python manage.py check &&
+      python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
+    container_name: borderlens-frontend
+    restart: unless-stopped
+    environment:
+      DOCKER_BACKEND_URL: http://backend:8000
+      DOCKER_MEDIA_RELAY_URL: http://media-relay:8888
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+      - media-relay

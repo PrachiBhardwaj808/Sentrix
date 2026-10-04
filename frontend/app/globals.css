@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #EBF3FA;
+  --foreground: #0F172A;
+  --surface: #FFFFFF;
+  --surface-container: #F1F6FB;
+  --outline: #94B8D7;
+  --outline-variant: #CBDCEB;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: #0F172A;
+  background-color: #EBF3FA;
+  font-family: Inter, Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Minimalist Scrollbar (Light Blue Steel) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #EBF3FA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBDCEB;
+  border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94B8D7;
+}
+
+/* 1px Light Blue Steel grid lines */
+.grid-layout {
+  display: grid;
+  gap: 1px;
+  background-color: #CBDCEB;
+}
+
+.grid-item {
+  background-color: #FFFFFF;
+}
+
+/* Sharp focus indicators */
+input:focus, select:focus, textarea:focus, button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* The light blue steel theme remains the default. Dark mode is a semantic
+   surface swap so existing tactical utility classes keep their layout and
+   accent colors without changing the visual identity of the console. */
+html.dark body {
+  color: #E2E8F0;
+  background-color: #0B1220;
+}
+
+html.dark ::-webkit-scrollbar-track { background: #0B1220; }
+html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+html.dark [class~="bg-[#EBF3FA]"] { background-color: #0B1220 !important; }
+html.dark [class~="bg-[#FFFFFF]"] { background-color: #111C2D !important; }
+html.dark [class~="bg-[#F0F6FC]"] { background-color: #162235 !important; }
+html.dark [class~="bg-[#F8FBFE]"] { background-color: #142033 !important; }
+html.dark [class~="bg-[#F8FAFC]"] { background-color: #142033 !important; }
+html.dark [class~="bg-[#F1F5F9]"] { background-color: #202D40 !important; }
+html.dark [class~="bg-[#E0F2FE]"] { background-color: #12344D !important; }
+html.dark [class~="bg-[#EBF3FA]"] { background-color: #0B1220 !important; }
+html.dark [class~="bg-[#E0ECF8]"] { background-color: #1A2A40 !important; }
+html.dark [class~="bg-[#F0F9FF]"] { background-color: #102D43 !important; }
+html.dark [class~="bg-[#FEF2F2]"] { background-color: #3B202A !important; }
+html.dark [class~="bg-[#FEE2E2]"] { background-color: #4A222D !important; }
+html.dark [class~="bg-[#F0FDF4]"] { background-color: #173525 !important; }
+html.dark [class~="bg-[#DCFCE7]"] { background-color: #173525 !important; }
+html.dark [class~="bg-[#FEF3C7]"] { background-color: #3E3218 !important; }
+
+html.dark [class~="text-[#0F172A]"] { color: #F1F5F9 !important; }
+html.dark [class~="text-[#475569]"] { color: #B8C6D9 !important; }
+html.dark [class~="text-[#64748B]"] { color: #94A3B8 !important; }
+html.dark [class~="text-[#334E68]"] { color: #CBD5E1 !important; }
+html.dark [class~="text-[#0369A1]"] { color: #7DD3FC !important; }
+html.dark [class~="text-[#0284C7]"] { color: #38BDF8 !important; }
+html.dark [class~="text-[#075985]"] { color: #7DD3FC !important; }
+html.dark [class~="text-[#166534]"] { color: #86EFAC !important; }
+html.dark [class~="text-[#991B1B]"] { color: #FCA5A5 !important; }
+html.dark [class~="text-[#92400E]"] { color: #FCD34D !important; }
+
+html.dark [class~="border-[#CBDCEB]"] { border-color: #2F4057 !important; }
+html.dark [class~="border-[#BAE6FD]"] { border-color: #25617F !important; }
+html.dark [class~="border-[#94B8D7]"] { border-color: #41627E !important; }
+html.dark [class~="border-[#0284C7]"] { border-color: #38BDF8 !important; }
+html.dark [class~="border-[#FCA5A5]"] { border-color: #9B4755 !important; }
+html.dark [class~="border-[#86EFAC]"] { border-color: #3F7A55 !important; }
+html.dark [class~="border-[#FCD34D]"] { border-color: #8A6D23 !important; }
+
+html.dark input::placeholder, html.dark textarea::placeholder { color: #64748B; }
+html.dark [class~="hover:bg-[#F8FBFE]"]:hover { background-color: #1A2A40 !important; }
+html.dark [class~="hover:bg-[#E0F2FE]"]:hover { background-color: #164563 !important; }
+html.dark [class~="hover:bg-[#BAE6FD]"]:hover { background-color: #225B78 !important; }

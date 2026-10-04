@@ -1,0 +1,11 @@
+# Optional dependencies for Django inference workers.
+# Install these in the worker environment, not in the Vercel frontend build.
+ultralytics>=8.1,<9.0
+easyocr>=1.7,<1.8
+deep-sort-realtime>=1.3
+opencv-python-headless>=4.8,<5.0
+numpy>=1.24,<2.0
+torch>=2.2
+torchvision>=0.17
+# deep-sort-realtime currently imports pkg_resources, removed by Setuptools 81+.
+setuptools>=77,<81
