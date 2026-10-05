@@ -53,10 +53,10 @@ export const ConsoleSidebar: React.FC = () => {
       isCritical: criticalCount > 0,
     },
     {
-      name: "Border Map",
+      name: "Intelligence Map",
       href: "/map",
       icon: MapPin,
-      desc: "GIS & Sensor Radar",
+      desc: "GIS, impact & response",
     },
     {
       name: "Operations Analytics",

@@ -96,7 +96,9 @@ export interface Alert {
   modelArtifactHash?: string;
   plateNumber?: string;
   watchlistEntryId?: string;
-  evidenceSource?: "ai_frame" | "demo" | "uploaded" | "camera" | string;
+  evidenceSource?: "ai_frame" | "community_report" | "demo" | "uploaded" | "camera" | string;
+  reporterName?: string;
+  reportCategory?: string;
   assignedGuardId?: string | null;
   assignedGuardName?: string | null;
   dispatchStatus?: "unassigned" | "dispatched" | "arrived" | "resolved" | string;
@@ -159,6 +161,15 @@ export type CameraStatus = "online" | "offline" | "signal_lost";
 export type TriggerAction = "Siren Alarm" | "QRF Dispatch" | "Guard Ping" | "Floodlight Trigger";
 
 export interface Point2D { x: number; y: number }
+
+export interface ResourceRecord {
+  id: string;
+  name: string;
+  type: "police" | "hospital" | "ambulance" | "fire" | "response_team";
+  coordinates: { lat: number; lng: number };
+  available: boolean;
+  capacity: number;
+}
 
 export interface Camera {
   id: string;
