@@ -1,4 +1,4 @@
-# GeoLens
+# Sentrix
 
 **See Risks. Map Impact. Respond Faster.**
 
@@ -11,13 +11,13 @@
 
 An AI-GIS public safety and mobility intelligence platform for Indian districts. It detects, locates, predicts, and coordinates response to risks, starting with Delhi.
 
-GeoLens evolved from BorderLens, originally built for the Smart India Hackathon (SIH).
+
 
 ---
 
 ## 1. Executive Summary
 
-Urban safety and district administration require rapid, coordinated, and privacy-preserving response mechanisms. GeoLens integrates computer vision inference, automatic number plate recognition (ANPR), and geographical information systems (GIS) into a unified operational console. Designed for district command centers, law enforcement, and emergency response teams, GeoLens correlates camera feeds, vehicle movements, and spatial risk heatmaps to accelerate search-and-recovery operations while strictly enforcing consent-based biometrics and cryptographic evidence hashing.
+Urban safety and district administration require rapid, coordinated, and privacy-preserving response mechanisms. Sentrix integrates computer vision inference, automatic number plate recognition (ANPR), and geographical information systems (GIS) into a unified operational console. Designed for district command centers, law enforcement, and emergency response teams, Sentix correlates camera feeds, vehicle movements, and spatial risk heatmaps to accelerate search-and-recovery operations while strictly enforcing consent-based biometrics and cryptographic evidence hashing.
 
 ---
 
@@ -43,14 +43,14 @@ Urban mobility and public safety challenges in National Capital Region (NCR) dis
 ```
 [08:00 AM] Reporting & Consented Enrollment
   - Family reports Aarti missing near Kashmere Gate ISBT.
-  - Parent enrolls a single reference photograph with signed consent into GeoLens.
+  - Parent enrolls a single reference photograph with signed consent into Sentix.
 
 [08:14 AM] AI Camera Match & Vehicle Trace
   - Camera CAM-NORTH-04 flags a potential face candidate (confidence score 0.92).
   - System flags an adjacent e-rickshaw (Registration: DL-1ER-4821) via ANPR.
 
 [08:22 AM] GIS Cross-Camera Trail Reconstruction
-  - GeoLens maps the e-rickshaw registration across 3 downstream traffic cameras.
+  - Sentrix maps the e-rickshaw registration across 3 downstream traffic cameras.
   - Spatial trajectory plots movement eastward toward GT Road.
 
 [08:28 AM] Automated Responder Dispatch & Verification
@@ -66,7 +66,7 @@ Urban mobility and public safety challenges in National Capital Region (NCR) dis
 
 ## 4. Solution Overview
 
-GeoLens operates as a closed-loop intelligence cycle, bridging real-time video perception with spatial GIS analysis and field action.
+Sentrix operates as a closed-loop intelligence cycle, bridging real-time video perception with spatial GIS analysis and field action.
 
 ### The Five-Stage Intelligence Loop
 
@@ -129,7 +129,7 @@ Features are categorized strictly according to codebase implementation state:
 
 ## 7. Responsible AI and Privacy
 
-GeoLens is built around privacy-by-design principles to ensure compliance with ethical guidelines and data protection norms:
+Sentrix is built around privacy-by-design principles to ensure compliance with ethical guidelines and data protection norms:
 
 1. **Consent-Based Reference Registry**: Biometrics are never scanned against arbitrary public datasets. Face matching operates exclusively against opt-in, consent-verified missing-person or authorized reference entries.
 2. **Backend-Only Embeddings**: Facial feature vectors (embeddings) are generated server-side and never exposed to the client or browser DOM.
@@ -423,11 +423,8 @@ GeoLens measures system performance against non-fabricated operational benchmark
 ---
 
 
-### License
 
-This project is licensed under the **MIT License**. See `LICENSE` for details.
 
----
 
 ### Third-Party Notices & Attribution
 
@@ -440,5 +437,9 @@ GeoLens incorporates open-source libraries and public frameworks:
 - **ArcGIS World Imagery**: Esri (Used for static/periodic basemap rendering)
 
 ---
+
+### License
+[MIT License](LICENSE)
+
 
 
