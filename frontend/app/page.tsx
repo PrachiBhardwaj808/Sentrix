@@ -77,11 +77,11 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[#0F172A] max-w-5xl leading-tight font-sans">
-            Intelligent Border Video Analytics
+            AI GIS Intelligence for Safer Communities
           </h1>
 
           <p className="mt-6 text-base sm:text-lg text-[#334E68] max-w-3xl leading-relaxed font-sans font-normal">
-            Precision monitoring and evidentiary documentation for high-security border environments. Local AI edge processing, cryptographic hash anchoring, and verifiable guard accountability.
+            See risks, map impact, and respond faster with one decision-support platform that connects AI detection, geographic context, community reports, vulnerable populations, and nearby emergency resources.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">
@@ -133,10 +133,10 @@ export default function LandingPage() {
                   <span>SYS.MODULE.01</span>
                 </div>
                 <h3 className="text-xl font-bold text-[#0F172A] uppercase tracking-wider font-sans">
-                  Local AI Inference
+                  AI + GIS Intelligence
                 </h3>
                 <p className="text-xs text-[#475569] font-sans leading-relaxed">
-                  On-edge processing ensures zero-latency threat detection without reliance on external network uplinks. Complete operational security maintained locally with automatic offline queueing.
+                  Sentrix locates AI detections and community reports on a layered intelligence map so authorized operators can understand what is happening, where it is happening, and who may be affected.
                 </p>
               </div>
 

@@ -16,9 +16,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, BarChart3, FileText, ShieldCheck, Timer, Users } from "lucide-react";
+import { Activity, BarChart3, Building2, FileText, Globe2, Route, ShieldCheck, Timer, Users } from "lucide-react";
 import { useIBVAPStore } from "@/lib/store/useIBVAPStore";
 import { DemoModeBadge } from "@/components/demo/DemoIncidentButton";
+import { SENTRIX_COMMUNITIES, SENTRIX_RESOURCES, communityVulnerability, riskBandForScore, riskScoreForArea, sectorRisk } from "@/lib/geospatial/sentrixIntel";
 
 const CHART_COLORS = ["#0284C7", "#16A34A", "#D97706", "#DC2626", "#7C3AED", "#0891B2"];
 
@@ -28,6 +29,12 @@ export default function AnalyticsPage() {
   const assignedAlerts = alerts.filter((alert) => alert.dispatchStatus === "dispatched" || alert.assignedGuardId).length;
   const resolvedAlerts = alerts.filter((alert) => alert.status === "resolved").length;
   const onDuty = guards.filter((guard) => ["on_post", "patrolling", "unreachable"].includes(guard.status)).length;
+  const communityData = SENTRIX_COMMUNITIES.map((community) => ({ ...community, vulnerability: communityVulnerability(community, alerts, cameras), risk: riskScoreForArea(community.coordinates, alerts, cameras) }));
+  const sectorRiskData = sectors.map((sector) => ({ code: sector.code, name: sector.name, ...sectorRisk(sector, alerts, cameras) }));
+  const affectedPopulation = communityData.filter((community) => community.risk >= 38 || community.vulnerability >= 60).reduce((sum, community) => sum + community.population, 0);
+  const availableResources = SENTRIX_RESOURCES.filter((resource) => resource.available).length;
+  const communityReports = alerts.filter((alert) => alert.evidenceSource === "community_report").length;
+  const correlatedSignals = alerts.filter((alert) => alert.evidenceSource === "community_report" && alerts.some((candidate) => candidate.id !== alert.id && candidate.sourceCameraId !== alert.sourceCameraId && candidate.coordinates && Math.abs(candidate.coordinates.lat - alert.coordinates.lat) < 0.02 && Math.abs(candidate.coordinates.lng - alert.coordinates.lng) < 0.02)).length;
 
   const sectorData = sectors.map((sector) => ({
     name: sector.code,
@@ -60,8 +67,8 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center bg-[#0284C7] text-white"><BarChart3 className="h-4 w-4" /></div>
           <div>
-            <h1 className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">OPERATIONS ANALYTICS // READINESS BOARD</h1>
-            <p className="mt-0.5 text-[11px] font-sans text-[#475569]">Detection volume, response workflow, and sector readiness from the current Sentrix state.</p>
+            <h1 className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">RISK INTELLIGENCE // COMMUNITY IMPACT BOARD</h1>
+            <p className="mt-0.5 text-[11px] font-sans text-[#475569]">Historical incidents, risk zones, vulnerable communities and response capacity from the current Sentrix state.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2"><DemoModeBadge /><Link href="/alerts" className="border border-[#CBDCEB] bg-[#F0F6FC] px-3 py-2 text-[10px] font-bold uppercase text-[#0369A1] hover:bg-[#E0F2FE]">OPEN EVIDENCE →</Link></div>
@@ -80,6 +87,18 @@ export default function AnalyticsPage() {
           </div>
         ))}
       </div>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_.9fr]">
+        <div className="border border-[#CBDCEB] bg-[#FFFFFF] p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between border-b border-[#CBDCEB] pb-2"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><Globe2 className="h-4 w-4 text-[#0284C7]" /> PREDICTIVE RISK ZONES</div><span className="text-[10px] text-[#64748B]">RECENT + HISTORICAL SIGNALS</span></div>
+          <div className="space-y-2">{(sectorRiskData.length ? sectorRiskData : [{ code: "LIVE", name: "Current operating area", score: riskScoreForArea({ lat: 27.245, lng: 88.765 }, alerts, cameras), band: riskBandForScore(riskScoreForArea({ lat: 27.245, lng: 88.765 }, alerts, cameras)) }]).map((zone) => <div key={zone.code} className="border border-[#CBDCEB] bg-[#F8FBFE] p-3"><div className="flex items-center justify-between text-[10px] font-bold uppercase"><span className="text-[#0F172A]">{zone.code} // {zone.name}</span><span className={zone.band === "HIGH" ? "text-[#DC2626]" : zone.band === "MEDIUM" ? "text-[#D97706]" : "text-[#16A34A]"}>{zone.band} {zone.score}/100</span></div><div className="mt-2 h-2 bg-[#E0ECF8]"><div className={zone.band === "HIGH" ? "h-full bg-[#DC2626]" : zone.band === "MEDIUM" ? "h-full bg-[#D97706]" : "h-full bg-[#16A34A]"} style={{ width: `${Math.max(zone.score, 6)}%` }} /></div><div className="mt-2 text-[10px] text-[#64748B]">Score combines incident count, recent activity, severity and camera coverage. It ranks attention; it does not make an autonomous decision.</div></div>)}</div>
+        </div>
+        <div className="border border-[#CBDCEB] bg-[#FFFFFF] p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between border-b border-[#CBDCEB] pb-2"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><Users className="h-4 w-4 text-[#A855F7]" /> SOCIAL IMPACT SNAPSHOT</div><span className="text-[10px] text-[#64748B]">DECISION SUPPORT</span></div>
+          <div className="grid grid-cols-2 gap-px border border-[#CBDCEB] bg-[#CBDCEB]">{[{ label: "POPULATION IN RISK ZONES", value: affectedPopulation.toLocaleString(), icon: Users }, { label: "AVAILABLE RESPONSE RESOURCES", value: `${availableResources}/${SENTRIX_RESOURCES.length}`, icon: Route }, { label: "COMMUNITY REPORTS", value: communityReports, icon: Globe2 }, { label: "CORRELATED SIGNALS", value: correlatedSignals, icon: ShieldCheck }].map((metric) => <div key={metric.label} className="bg-[#F8FBFE] p-3"><div className="flex items-center justify-between text-[10px] font-bold text-[#475569]"><span>{metric.label}</span><metric.icon className="h-3.5 w-3.5 text-[#0284C7]" /></div><div className="mt-2 text-2xl font-bold text-[#0F172A]">{metric.value}</div></div>)}</div>
+          <div className="mt-4 space-y-2">{communityData.sort((a, b) => b.vulnerability - a.vulnerability).slice(0, 3).map((community) => <div key={community.id} className="flex items-center justify-between border-b border-[#E2E8F0] py-2 text-[10px]"><span className="flex items-center gap-2"><Building2 className="h-3.5 w-3.5 text-[#A855F7]" />{community.name}</span><span className="font-bold text-[#A855F7]">VULNERABILITY {community.vulnerability}/100</span></div>)}</div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <section className="border border-[#CBDCEB] bg-[#FFFFFF] p-4 shadow-sm">

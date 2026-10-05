@@ -54,10 +54,10 @@ export default function DashboardPage() {
           </div>
           <div>
             <h1 className="text-xs font-bold text-[#0F172A] uppercase tracking-widest">
-              COMMAND CONSOLE // SECTOR_NODE_ALPHA_07
+              SENTRIX COMMAND CONSOLE // COMMUNITY_NODE_ALPHA_07
             </h1>
             <p className="text-[11px] text-[#475569] mt-0.5 font-sans">
-              Live automated surveillance overview & post readiness.
+              AI + GIS intelligence overview, community impact and response readiness.
             </p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function DashboardPage() {
         {/* Alerts KPI */}
         <Link href="/alerts" className="block p-5 bg-[#FFFFFF] hover:bg-[#F8FBFE] transition-colors group">
           <div className="flex items-center justify-between text-[#475569] text-[10px] uppercase tracking-widest font-bold">
-            <span>ACTIVE THREATS</span>
+            <span>ACTIVE INCIDENTS</span>
             <ShieldAlert className="w-4 h-4 text-[#DC2626]" />
           </div>
           <div className="mt-3 flex items-baseline justify-between">
@@ -89,7 +89,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <span className="text-[10px] text-[#0284C7] group-hover:underline mt-3 block uppercase tracking-wider font-bold">
-            OPEN EVIDENCE VAULT →
+            OPEN INCIDENT STREAM →
           </span>
         </Link>
 

@@ -9,7 +9,9 @@
 ![Next.js](https://img.shields.io/badge/next.js-16.3-black)
 ![Event](https://img.shields.io/badge/MyBharat-Hack%20for%20Social%20Cause-orange)
 
-An AI-GIS public safety and mobility intelligence platform for Indian districts. It detects, locates, predicts, and coordinates response to risks, starting with Delhi.
+An AI-GIS public safety and community resilience intelligence platform for Indian districts. It detects, locates, predicts, maps impact, and coordinates response to risks while keeping authorized people in the decision loop.
+
+Sentrix now includes the project-reframed MVP described in `GeoLens_New_Features_and_Project_Reframing.docx`: an interactive multi-layer GIS intelligence map, real-time incident mapping, explainable risk scores, predictive hotspots, community vulnerability mapping, community incident reports, AI/community correlation, nearby resource identification, response and route recommendations, critical-infrastructure impact, heatmaps, historical analytics, and a human-reviewed emergency/disaster extension path.
 
 
 
@@ -440,5 +442,4 @@ Sentrix incorporates open-source libraries and public frameworks:
 
 ### License
 [MIT License](LICENSE)
-
 

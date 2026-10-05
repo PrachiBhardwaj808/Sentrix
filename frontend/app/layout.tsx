@@ -4,7 +4,7 @@ import { ThemeController } from "@/components/theme/ThemeController";
 
 export const metadata: Metadata = {
   title: "Sentrix — AI GIS Intelligence for Safer Communities",
-  description: "Next-generation stark tactical surveillance command terminal and human accountability guard duty system for border security.",
+  description: "Sentrix AI GIS intelligence for safer communities, with explainable risk, impact and response decision support.",
 };
 
 export default function RootLayout({
