@@ -10,7 +10,9 @@ import {
   Point2D,
   DemoProfile,
   WatchlistEntry,
+  ResourceRecord,
 } from "../types";
+import { CommunityRecord, InfrastructureRecord, RoadRecord } from "../geospatial/sentrixIntel";
 import { tacticalSound } from "../sound";
 import { generateId } from "../utils";
 import { backendApi, BlockchainStatus, BootstrapData, CreateDemoProfilePayload, CreateGuardPayload, CreateWatchlistPayload, DispatchAlertResponse, FirebaseStatus } from "../api/client";
@@ -49,6 +51,10 @@ interface IBVAPState {
   alerts: Alert[];
   cameras: Camera[];
   sectors: Sector[];
+  communities: CommunityRecord[];
+  resources: ResourceRecord[];
+  infrastructure: InfrastructureRecord[];
+  roads: RoadRecord[];
   watchlistEntries: WatchlistEntry[];
   demoProfiles: DemoProfile[];
 
@@ -122,6 +128,10 @@ const applyBackendData = (
   alerts: data.alerts,
   cameras: data.cameras,
   sectors: data.sectors,
+  communities: data.communities || [],
+  resources: data.resources || [],
+  infrastructure: data.infrastructure || [],
+  roads: data.roads || [],
   watchlistEntries: data.watchlistEntries || [],
   demoProfiles: data.demoProfiles || [],
   currentUser: data.currentUser,
@@ -157,6 +167,10 @@ export const useIBVAPStore = create<IBVAPState>((set, get) => {
     alerts: [],
     cameras: [],
     sectors: [],
+    communities: [],
+    resources: [],
+    infrastructure: [],
+    roads: [],
     watchlistEntries: [],
     demoProfiles: [],
 

@@ -7,6 +7,7 @@ import { useIBVAPStore } from "@/lib/store/useIBVAPStore";
 import { evidenceSource } from "@/lib/evidence";
 
 export const DemoIncidentButton: React.FC = () => {
+  if (process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE !== "true") return null;
   const { cameras, watchlistEntries, addAlert } = useIBVAPStore();
   const [created, setCreated] = useState(false);
 
@@ -45,8 +46,8 @@ export const DemoIncidentButton: React.FC = () => {
   );
 };
 
-export const DemoModeBadge: React.FC = () => (
+export const DemoModeBadge: React.FC = () => process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true" ? (
   <div className="flex items-center gap-1.5 border border-[#BAE6FD] bg-[#F0F9FF] px-2 py-1 text-[9px] font-bold uppercase text-[#0369A1]">
     <Bot className="h-3.5 w-3.5" /> PRESENTATION-SAFE DEMO MODE
   </div>
-);
+) : null;

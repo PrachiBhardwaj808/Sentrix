@@ -5,7 +5,7 @@ import { SentrixIntelligenceMap, CommunityReportInput } from "@/components/map/S
 import { useIBVAPStore } from "@/lib/store/useIBVAPStore";
 
 export default function MapPage() {
-  const { sectors, cameras, alerts, acknowledgeAlert, addAlert } = useIBVAPStore();
+  const { sectors, cameras, alerts, communities, resources, infrastructure, roads, acknowledgeAlert, addAlert } = useIBVAPStore();
 
   const submitCommunityReport = (report: CommunityReportInput) => {
     const level = report.category === "fire" || report.category === "accident" ? "high" : report.category === "missing person" ? "critical" : "medium";
@@ -37,6 +37,10 @@ export default function MapPage() {
       sectors={sectors}
       cameras={cameras}
       alerts={alerts}
+      communities={communities}
+      resources={resources}
+      infrastructure={infrastructure}
+      roads={roads}
       onAcknowledgeAlert={acknowledgeAlert}
       onSubmitCommunityReport={submitCommunityReport}
       className="pb-2"

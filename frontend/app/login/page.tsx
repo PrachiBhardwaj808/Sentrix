@@ -69,7 +69,7 @@ export default function LoginPage() {
     } catch (loginError) {
       // Keep the UI preview usable when Django is intentionally offline. The
       // backend path above is authoritative whenever the API is reachable.
-      if (process.env.NODE_ENV !== "production" && !(loginError instanceof ApiError)) {
+      if (process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true" && process.env.NODE_ENV !== "production" && !(loginError instanceof ApiError)) {
         const localSession = authenticate(operatorId, passcode);
         if (localSession) {
           setOfflineSession(localSession);

@@ -51,7 +51,7 @@ const SESSION_KEY = "sentrix.auth.session";
 export function authenticate(operatorId: string, passcode: string): AuthSession | null {
   // Browser-stored demo credentials are useful for local UI work only. A
   // production build must always use the backend/Firebase authority.
-  if (process.env.NODE_ENV === "production") return null;
+  if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE !== "true") return null;
   const normalizedId = operatorId.trim().toUpperCase();
   const account = DEMO_ACCOUNTS.find(
     (candidate) => candidate.operatorId === normalizedId && candidate.passcode === passcode

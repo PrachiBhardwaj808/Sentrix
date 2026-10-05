@@ -51,6 +51,7 @@ class DispatchOtpRateLimitError(RuntimeError):
 
 _CAMERA_RULE_ENGINES: dict[str, CameraRuleEngine] = {}
 _TRIAGE_AGENT = IncidentTriageAgent()
+_GEOSPATIAL_COLLECTIONS = {"communities", "resources", "infrastructure", "roads"}
 
 
 @require_http_methods(["GET"])
@@ -350,7 +351,8 @@ def watchlist(request: HttpRequest) -> JsonResponse:
     if not session:
         return _error("authenticated operator access is required", 401)
     if request.method == "GET":
-        repository.ensure_demo_watchlist()
+        if _demo_data_enabled(request):
+            repository.ensure_demo_watchlist()
         return JsonResponse({"watchlistEntries": repository.snapshot().get("watchlistEntries", [])})
 
     if not session or session.get("tier") != "admin":
@@ -415,7 +417,8 @@ def demo_profiles(request: HttpRequest) -> JsonResponse:
     session = _session_from_request(request)
     if not session:
         return _error("authenticated operator access is required", 401)
-    repository.ensure_demo_profiles()
+    if _demo_data_enabled(request):
+        repository.ensure_demo_profiles()
     if request.method == "GET":
         return JsonResponse({"profiles": repository.snapshot().get("demoProfiles", [])})
     if session.get("tier") != "admin":
@@ -450,8 +453,9 @@ def demo_profiles(request: HttpRequest) -> JsonResponse:
 def bootstrap(request: HttpRequest) -> JsonResponse:
     if not _session_from_request(request):
         return _error("authenticated operator access is required", 401)
-    repository.ensure_demo_watchlist()
-    repository.ensure_demo_profiles()
+    if _demo_data_enabled(request):
+        repository.ensure_demo_watchlist()
+        repository.ensure_demo_profiles()
     data, firebase = _snapshot_with_firebase_alerts()
     return JsonResponse({
         "data": data,
@@ -459,6 +463,49 @@ def bootstrap(request: HttpRequest) -> JsonResponse:
         "blockchain": blockchain.get_status(),
         "firebase": firebase,
     })
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def geospatial(request: HttpRequest) -> JsonResponse:
+    """Read or provision verified GIS reference records owned by the backend."""
+    session = _session_from_request(request)
+    if not session:
+        return _error("authenticated operator access is required", 401)
+    if request.method == "GET":
+        snapshot = repository.snapshot()
+        return JsonResponse({collection: snapshot.get(collection, []) for collection in _GEOSPATIAL_COLLECTIONS})
+    if session.get("tier") != "admin":
+        return _error("administrator access is required", 403)
+    payload = _body(request)
+    collection = str(payload.get("collection") or "").strip()
+    record = payload.get("record")
+    if collection not in _GEOSPATIAL_COLLECTIONS or not isinstance(record, dict):
+        return _error("collection must be one of communities, resources, infrastructure, or roads and record must be an object")
+    record_id = str(record.get("id") or "").strip()
+    if not record_id:
+        return _error("geospatial records require a stable id")
+    coordinates = record.get("coordinates")
+    if collection != "roads" and (not isinstance(coordinates, dict) or not _valid_coordinates(coordinates)):
+        return _error("geospatial records require valid coordinates")
+    if collection == "roads":
+        points = record.get("points")
+        if not isinstance(points, list) or len(points) < 2 or any(not isinstance(point, dict) or not _valid_coordinates(point) for point in points):
+            return _error("road records require at least two valid points")
+    return JsonResponse({"record": repository.upsert(collection, record)}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def geospatial_detail(request: HttpRequest, collection: str, item_id: str) -> JsonResponse:
+    session = _session_from_request(request)
+    if not session or session.get("tier") != "admin":
+        return _error("administrator access is required", 403)
+    if collection not in _GEOSPATIAL_COLLECTIONS:
+        return _error("unsupported geospatial collection", 404)
+    if not repository.delete(collection, item_id):
+        return _error("geospatial record not found", 404)
+    return JsonResponse({"deleted": item_id, "collection": collection})
 
 
 @require_http_methods(["GET"])
@@ -865,7 +912,8 @@ def mark_potential_match(request: HttpRequest, alert_id: str) -> JsonResponse:
     if alert.get("identityStatus") != "unidentified":
         return _error("only unidentified-face review alerts can be marked as potential matches", 400)
     payload = _body(request)
-    repository.ensure_demo_profiles()
+    if _demo_data_enabled(request):
+        repository.ensure_demo_profiles()
     profile_id = str(payload.get("profileId") or "").strip()
     profile = repository.get("demoProfiles", profile_id)
     if not profile:
@@ -1385,6 +1433,15 @@ def _is_expired(value: Any) -> bool:
     return timestamp <= datetime.now(timezone.utc)
 
 
+def _valid_coordinates(value: dict[str, Any]) -> bool:
+    try:
+        latitude = float(value.get("lat"))
+        longitude = float(value.get("lng"))
+    except (TypeError, ValueError):
+        return False
+    return -90 <= latitude <= 90 and -180 <= longitude <= 180
+
+
 def _check_hash(value: str, stored_hash: str) -> bool:
     from django.contrib.auth.hashers import check_password
 
@@ -1398,6 +1455,12 @@ def _auth_two_factor_enabled() -> bool:
 def _allow_demo_auth_users(request: HttpRequest) -> bool:
     enabled = os.getenv("AUTH_ALLOW_DEMO_USERS", "false").strip().lower() in {"1", "true", "yes", "on"}
     return enabled and _is_loopback_request(request)
+
+
+def _demo_data_enabled(request: HttpRequest | None = None) -> bool:
+    """Enable fixtures only when explicitly opted into local demo mode."""
+    enabled = os.getenv("SENTRIX_ENABLE_DEMO_DATA", "false").strip().lower() in {"1", "true", "yes", "on"}
+    return enabled and (request is None or _is_loopback_request(request))
 
 
 def _allow_demo_otp(request: HttpRequest) -> bool:

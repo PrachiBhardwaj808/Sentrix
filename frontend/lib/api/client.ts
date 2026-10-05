@@ -10,7 +10,9 @@ import {
   WatchlistEntry,
   WatchlistStatus,
   WatchlistType,
+  ResourceRecord,
 } from "@/lib/types";
+import { CommunityRecord, InfrastructureRecord, RoadRecord } from "@/lib/geospatial/sentrixIntel";
 import { AuthSession, getAuthSession } from "@/lib/auth";
 import { DEFAULT_SERVER_API_BASE_URL, getBrowserApiBaseUrl } from "@/lib/api/route";
 
@@ -74,6 +76,10 @@ export interface BootstrapData {
   alerts: Alert[];
   cameras: Camera[];
   sectors: Sector[];
+  communities: CommunityRecord[];
+  resources: ResourceRecord[];
+  infrastructure: InfrastructureRecord[];
+  roads: RoadRecord[];
   pois?: unknown[];
   anprRecords?: unknown[];
   watchlistEntries: WatchlistEntry[];

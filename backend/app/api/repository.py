@@ -12,7 +12,7 @@ from typing import Any, Iterable, Optional
 
 from ..services.audit.chain import append_chain_entry, audit_chain_status, verify_audit_chain
 
-STATE_SCHEMA_VERSION = 4
+STATE_SCHEMA_VERSION = 5
 
 
 def empty_state() -> dict[str, Any]:
@@ -31,6 +31,10 @@ def empty_state() -> dict[str, Any]:
         "alerts": [],
         "cameras": [],
         "sectors": [],
+        "communities": [],
+        "resources": [],
+        "infrastructure": [],
+        "roads": [],
         "pois": [],
         "anprRecords": [],
         "watchlistEntries": [],
@@ -75,6 +79,10 @@ class ApiRepository:
             auth_users = deepcopy(self._state.get("authUsers", []))
             watchlist_entries = deepcopy(self._state.get("watchlistEntries", []))
             demo_profiles = deepcopy(self._state.get("demoProfiles", []))
+            communities = deepcopy(self._state.get("communities", []))
+            resources = deepcopy(self._state.get("resources", []))
+            infrastructure = deepcopy(self._state.get("infrastructure", []))
+            roads = deepcopy(self._state.get("roads", []))
             auth_audit_log = deepcopy(self._state.get("authAuditLog", []))
             firebase_outbox = deepcopy(self._state.get("firebaseOutbox", []))
             fcm_outbox = deepcopy(self._state.get("fcmOutbox", []))
@@ -86,6 +94,10 @@ class ApiRepository:
             self._state["authUsers"] = auth_users
             self._state["watchlistEntries"] = watchlist_entries
             self._state["demoProfiles"] = demo_profiles
+            self._state["communities"] = communities
+            self._state["resources"] = resources
+            self._state["infrastructure"] = infrastructure
+            self._state["roads"] = roads
             self._state["authAuditLog"] = auth_audit_log
             self._state["firebaseOutbox"] = firebase_outbox
             self._state["fcmOutbox"] = fcm_outbox
@@ -523,10 +535,14 @@ class ApiRepository:
     def _load(self) -> dict[str, Any]:
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
-            if isinstance(payload, dict) and payload.get("schemaVersion", 0) in {2, 3, STATE_SCHEMA_VERSION}:
+            if isinstance(payload, dict) and payload.get("schemaVersion", 0) in {2, 3, 4, STATE_SCHEMA_VERSION}:
                 payload["schemaVersion"] = STATE_SCHEMA_VERSION
                 payload.setdefault("watchlistEntries", [])
                 payload.setdefault("demoProfiles", [])
+                payload.setdefault("communities", [])
+                payload.setdefault("resources", [])
+                payload.setdefault("infrastructure", [])
+                payload.setdefault("roads", [])
                 payload.setdefault("authUsers", [])
                 payload.setdefault("authChallenges", [])
                 payload.setdefault("dispatchChallenges", [])

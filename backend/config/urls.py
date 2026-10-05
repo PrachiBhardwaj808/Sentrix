@@ -20,6 +20,8 @@ urlpatterns = [
     path("api/watchlist/<str:entry_id>", views.watchlist_detail),
     path("api/demo-profiles", views.demo_profiles),
     path("api/bootstrap", views.bootstrap),
+    path("api/geospatial", views.geospatial),
+    path("api/geospatial/<str:collection>/<str:item_id>", views.geospatial_detail),
     path("api/blockchain/status", views.blockchain_status),
     path("api/firebase/status", views.firebase_status_view),
     path("api/inference/frame", views.inference_frame),
