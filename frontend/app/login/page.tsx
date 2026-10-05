@@ -140,7 +140,7 @@ export default function LoginPage() {
             <Shield className="w-5 h-5" />
           </div>
           <h2 className="text-sm font-bold uppercase tracking-widest text-[#0F172A]">
-            BORDERLENS // CONSOLE_AUTH
+            SENTRIX // CONSOLE_AUTH
           </h2>
           <p className="text-[10px] text-[#0284C7] font-semibold mt-1 tracking-wider">
             RESTRICTED ACCESS // NODE_ALPHA_07

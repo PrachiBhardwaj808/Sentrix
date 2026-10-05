@@ -280,7 +280,7 @@ def auth_passkey_register_options(request: HttpRequest) -> JsonResponse:
     challenge = secrets.token_bytes(32)
     options = generate_registration_options(
         rp_id=_webauthn_rp_id(),
-        rp_name="BorderLens Command Center",
+        rp_name="Sentrix Command Center",
         user_name=str(user.get("operatorId")),
         user_display_name=str(user.get("name") or user.get("operatorId")),
         user_id=hashlib.sha256(str(user.get("operatorId")).encode("utf-8")).digest(),
@@ -1421,7 +1421,7 @@ def _issue_otp_challenge(request: HttpRequest, user: dict[str, Any]) -> dict[str
         if not phone:
             raise ExotelDeliveryError("This operator has no phone number for Exotel two-step verification.")
         delivery = "exotel_sms"
-        message = f"BorderLens login verification code: {otp}. It expires in 5 minutes. Do not share this code."
+        message = f"Sentrix login verification code: {otp}. It expires in 5 minutes. Do not share this code."
         delivery_status = send_sms(phone, message, custom_data=f"login:{operator_id}")
     elif not _allow_demo_otp(request):
         raise ExotelConfigurationError("Two-step verification is enabled but Exotel is not configured.")
@@ -1578,7 +1578,7 @@ def _send_dispatch_sms(alert: dict[str, Any], guard: dict[str, Any]) -> dict[str
         }
     coordinates = alert.get("coordinates") or {}
     body = (
-        f"BorderLens {str(alert.get('level', 'normal')).upper()} alert {alert.get('id')}: "
+        f"Sentrix {str(alert.get('level', 'normal')).upper()} alert {alert.get('id')}: "
         f"{alert.get('eventType', 'incident')} at {alert.get('sector', 'assigned sector')}. "
         f"Location {coordinates.get('lat', 'n/a')},{coordinates.get('lng', 'n/a')}. "
         f"Report to post. Do not share this message."

@@ -1,7 +1,7 @@
 services:
   media-relay:
     image: bluenviron/mediamtx:latest
-    container_name: borderlens-media-relay
+    container_name: sentrix-media-relay
     restart: unless-stopped
     ports:
       - "8554:8554" # RTSP ingest
@@ -18,7 +18,7 @@ services:
       dockerfile: Dockerfile
       args:
         INSTALL_AI: "true"
-    container_name: borderlens-backend
+    container_name: sentrix-backend
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
-    container_name: borderlens-frontend
+    container_name: sentrix-frontend
     restart: unless-stopped
     environment:
       DOCKER_BACKEND_URL: http://backend:8000

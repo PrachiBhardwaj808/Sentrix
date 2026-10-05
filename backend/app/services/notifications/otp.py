@@ -75,7 +75,7 @@ def dispatch_message(*, otp: str, alert_id: str, sector: str, priority: str, dis
     """Keep the guard message concise and explicit about not sharing the OTP."""
 
     return (
-        f"BorderLens {priority.upper()} dispatch {alert_id} for {sector}. "
+        f"Sentrix {priority.upper()} dispatch {alert_id} for {sector}. "
         f"Report as instructed at {dispatched_at}. Verification OTP: {otp}. "
         "OTP expires soon; do not share it."
     )

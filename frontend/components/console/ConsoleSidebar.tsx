@@ -93,7 +93,7 @@ export const ConsoleSidebar: React.FC = () => {
               S_COMMAND_01
             </h1>
             <p className="font-mono text-[10px] text-[#0284C7] font-semibold tracking-wider mt-1">
-              SSB BORDERLENS OS
+              SENTRIX // AI GIS INTELLIGENCE
             </p>
           </div>
         </div>

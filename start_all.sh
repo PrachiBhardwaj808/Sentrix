@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# BorderLens Multi-Service Launcher
+# Sentrix Multi-Service Launcher
 # ==============================================================================
 
 set -e
@@ -9,14 +9,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "===================================================="
-echo "  Starting BorderLens Surveillance OS  "
+echo "  Starting Sentrix AI GIS Intelligence OS  "
 echo "===================================================="
 
 PIDS=()
 
 cleanup() {
   echo ""
-  echo "Shutting down all BorderLens services..."
+  echo "Shutting down all Sentrix services..."
   for pid in "${PIDS[@]}"; do
     if kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
@@ -47,8 +47,8 @@ elif command -v python3 &>/dev/null && [ -f "$SCRIPT_DIR/backend/manage.py" ]; t
   PIDS+=($!)
 fi
 
-# 2. Start BorderLens Next.js Frontend
-echo "[2/2] Launching BorderLens Next.js frontend on http://localhost:3000 ..."
+# 2. Start Sentrix Next.js Frontend
+echo "[2/2] Launching Sentrix Next.js frontend on http://localhost:3000 ..."
 (
   cd "$SCRIPT_DIR/frontend"
   npm run dev
@@ -57,8 +57,8 @@ PIDS+=($!)
 
 echo ""
 echo "===================================================="
-echo "  All BorderLens Services Online!                  "
-echo "  - BorderLens Console:  http://localhost:3000      "
+echo "  All Sentrix Services Online!                    "
+echo "  - Sentrix Console:  http://localhost:3000        "
 echo "  - Live Camera Feed:    http://localhost:3000/live-feed  "
 echo "===================================================="
 echo "Press Ctrl+C to terminate all services."

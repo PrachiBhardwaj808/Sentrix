@@ -17,7 +17,7 @@ An AI-GIS public safety and mobility intelligence platform for Indian districts.
 
 ## 1. Executive Summary
 
-Urban safety and district administration require rapid, coordinated, and privacy-preserving response mechanisms. Sentrix integrates computer vision inference, automatic number plate recognition (ANPR), and geographical information systems (GIS) into a unified operational console. Designed for district command centers, law enforcement, and emergency response teams, Sentix correlates camera feeds, vehicle movements, and spatial risk heatmaps to accelerate search-and-recovery operations while strictly enforcing consent-based biometrics and cryptographic evidence hashing.
+Urban safety and district administration require rapid, coordinated, and privacy-preserving response mechanisms. Sentrix integrates computer vision inference, automatic number plate recognition (ANPR), and geographical information systems (GIS) into a unified operational console. Designed for district command centers, law enforcement, and emergency response teams, Sentrix correlates camera feeds, vehicle movements, and spatial risk heatmaps to accelerate search-and-recovery operations while strictly enforcing consent-based biometrics and cryptographic evidence hashing.
 
 ---
 
@@ -43,7 +43,7 @@ Urban mobility and public safety challenges in National Capital Region (NCR) dis
 ```
 [08:00 AM] Reporting & Consented Enrollment
   - Family reports Aarti missing near Kashmere Gate ISBT.
-  - Parent enrolls a single reference photograph with signed consent into Sentix.
+  - Parent enrolls a single reference photograph with signed consent into Sentrix.
 
 [08:14 AM] AI Camera Match & Vehicle Trace
   - Camera CAM-NORTH-04 flags a potential face candidate (confidence score 0.92).
@@ -210,7 +210,7 @@ graph TD
 
 ## 10. Scripted Demo Walkthrough (5 Minutes)
 
-Follow this 5-minute script to demonstrate the core capabilities of GeoLens:
+Follow this 5-minute script to demonstrate the core capabilities of Sentrix:
 
 ```
 [00:00 - 01:00] Step 1: Missing Child Alert Ingest
@@ -259,21 +259,21 @@ Follow this 5-minute script to demonstrate the core capabilities of GeoLens:
 ### Step 1: Clone and Environment Variables Configuration
 
 ```bash
-git clone https://github.com/PrachiBhardwaj808/GeoLense.git
-cd GeoLense
+git clone https://github.com/PrachiBhardwaj808/GeoLense.git Sentrix
+cd Sentrix
 ```
 
 Create a `.env` file inside `backend/`:
 
 ```env
 # Backend Configuration
-SECRET_KEY=geolens-development-secret-key-change-in-production
+SECRET_KEY=sentrix-development-secret-key-change-in-production
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database Configuration (PostgreSQL / PostGIS)
 DB_ENGINE=django.contrib.gis.db.backends.postgis
-DB_NAME=geolens_db
+DB_NAME=sentrix_db
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_HOST=127.0.0.1
@@ -295,8 +295,8 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 If using PostgreSQL with PostGIS:
 
 ```sql
-CREATE DATABASE geolens_db;
-\c geolens_db;
+CREATE DATABASE sentrix_db;
+\c sentrix_db;
 CREATE EXTENSION IF NOT EXISTS postgis;
 ```
 
@@ -397,7 +397,7 @@ All API routes are versioned under `/api/v1/`.
 
 ## 13. Key Impact Metrics
 
-GeoLens measures system performance against non-fabricated operational benchmarks:
+Sentrix measures system performance against non-fabricated operational benchmarks:
 
 - **Incident Response Time**: Measured in minutes from initial alert generation to responder dispatch confirmation.
 - **Search-and-Recovery Duration**: Measured in hours from missing-person report ingestion to physical handover completion.
@@ -428,7 +428,7 @@ GeoLens measures system performance against non-fabricated operational benchmark
 
 ### Third-Party Notices & Attribution
 
-GeoLens incorporates open-source libraries and public frameworks:
+Sentrix incorporates open-source libraries and public frameworks:
 - **YOLOv8**: Ultralytics (AGPL-3.0 / Commercial)
 - **EasyOCR**: Jaided AI (Apache-2.0)
 - **OpenCV**: Open Source Computer Vision Library (Apache-2.0)
@@ -440,6 +440,5 @@ GeoLens incorporates open-source libraries and public frameworks:
 
 ### License
 [MIT License](LICENSE)
-
 
 

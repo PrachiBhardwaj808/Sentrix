@@ -43,7 +43,7 @@ export default function LandingPage() {
               <Shield className="w-4 h-4" />
             </div>
             <div className="font-bold text-xs tracking-widest text-[#0F172A] uppercase">
-              S_COMMAND_01 // BORDERLENS
+              S_COMMAND_01 // SENTRIX
             </div>
           </div>
 
@@ -196,7 +196,7 @@ export default function LandingPage() {
       <footer className="border-t border-[#CBDCEB] py-8 bg-[#FFFFFF] text-center text-xs text-[#64748B]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="font-bold text-[#0F172A] uppercase tracking-widest">
-            SSB BORDERLENS // OVERSIGHT TERMINAL V4.0
+            SENTRIX // AI GIS OVERSIGHT TERMINAL V4.0
           </div>
           <div>
             SYSTEM_UPTIME: <span className="text-[#0284C7] font-bold">99.98%</span> // ENCRYPTION: <span className="text-[#0284C7] font-bold">AES-256</span>

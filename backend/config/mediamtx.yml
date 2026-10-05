@@ -1,4 +1,4 @@
-# MediaMTX Configuration for BorderLens
+# MediaMTX Configuration for Sentrix
 logLevel: info
 logDestinations: [stdout]
 

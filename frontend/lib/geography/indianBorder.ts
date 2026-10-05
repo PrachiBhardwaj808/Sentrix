@@ -48,7 +48,7 @@ export const INDIAN_BORDER_REFERENCES: IndianBorderReference[] = [
     neighbor: "Pakistan",
     lengthKm: null,
     bounds: DEMO_GEO_BOUNDS,
-    note: "Existing BorderLens demonstration area around the Punjab camera sample.",
+    note: "Existing Sentrix demonstration area around the Punjab camera sample.",
     points: [],
   },
   {

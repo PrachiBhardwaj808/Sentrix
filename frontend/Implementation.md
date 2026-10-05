@@ -1,4 +1,4 @@
-# BorderLens — Full Web Platform Implementation Plan
+# Sentrix — Full Web Platform Implementation Plan
 ### Intelligent Border Video Analytics Platform (Command Center + Guard Duty System)
 **Status:** Integrated UI → Backend-connected | **Data mode:** Django API with explicit empty states | **Owner:** Aki (Lead) + 5-person team
 
@@ -6,7 +6,7 @@
 
 ## 0. Why this doc exists
 
-This is the single source of truth for building BorderLens as a **portfolio/demo-grade product**, not a prototype. Every screen, every empty state, every hover — built like it's shipping to a real command center. The frontend reads Django-owned records and never fabricates operational alerts, cameras, guards, identities, or evidence when the API has no data.
+This is the single source of truth for building Sentrix as a **portfolio/demo-grade product**, not a prototype. Every screen, every empty state, every hover — built like it's shipping to a real command center. The frontend reads Django-owned records and never fabricates operational alerts, cameras, guards, identities, or evidence when the API has no data.
 
 Your 4 reference screens (Alerts, Live Feed / Tactical Matrix, Map, Camera Management) are the visual bar. Nothing we ship should look worse than those.
 
@@ -16,7 +16,7 @@ Your 4 reference screens (Alerts, Live Feed / Tactical Matrix, Map, Camera Manag
 
 ### 1.1 Two surfaces
 1. **SSB Command Console** (the app in your screenshots) — internal, authenticated, dense, tactical UI.
-2. **Public Landing Page** — marketing/demo page explaining BorderLens, for judges/recruiters/stakeholders. Lighter, faster, sells the product in 30 seconds.
+2. **Public Landing Page** — marketing/demo page explaining Sentrix, for judges/recruiters/stakeholders. Lighter, faster, sells the product in 30 seconds.
 
 ### 1.2 Command Console — modules
 | # | Module | Status in your screenshots |

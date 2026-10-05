@@ -208,7 +208,7 @@ export default function CameraSettingsAdminPage() {
             <div className="flex h-8 w-8 items-center justify-center bg-[#0284C7] text-white"><Fingerprint className="h-4 w-4" /></div>
             <div>
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">AUTHENTICATION SECURITY // FACE ID / AUDIT</h2>
-              <p className="mt-1 text-[11px] text-[#475569]">Enroll a device passkey for Face ID or Touch ID. The browser receives a cryptographic result; BorderLens never receives biometric data.</p>
+              <p className="mt-1 text-[11px] text-[#475569]">Enroll a device passkey for Face ID or Touch ID. The browser receives a cryptographic result; Sentrix never receives biometric data.</p>
             </div>
           </div>
           <button type="button" onClick={() => void enrollPasskey()} disabled={isEnrollingPasskey} className="inline-flex items-center gap-2 border border-[#0284C7] bg-[#0284C7] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-[#0369A1] disabled:cursor-wait disabled:opacity-50">
@@ -471,7 +471,7 @@ export default function CameraSettingsAdminPage() {
             </label>
             <label className="space-y-1.5 text-[10px] font-bold uppercase tracking-wider text-[#475569]">
               QR code *
-              <input required value={profileForm.qrCode} onChange={(event) => setProfileForm((current) => ({ ...current, qrCode: event.target.value }))} placeholder="BORDERLENS-DEMO-07" className={inputClass} />
+              <input required value={profileForm.qrCode} onChange={(event) => setProfileForm((current) => ({ ...current, qrCode: event.target.value }))} placeholder="SENTRIX-DEMO-07" className={inputClass} />
             </label>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#CBDCEB] pt-4">

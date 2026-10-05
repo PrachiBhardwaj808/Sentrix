@@ -23,7 +23,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     operatorId: "ADMIN-001",
     passcode: "BL-ADMIN-2026",
-    name: "BorderLens System Administrator",
+    name: "Sentrix System Administrator",
     rank: "Administrator",
     role: "Full system access",
     tier: "admin",
@@ -46,7 +46,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   },
 ];
 
-const SESSION_KEY = "borderlens.auth.session";
+const SESSION_KEY = "sentrix.auth.session";
 
 export function authenticate(operatorId: string, passcode: string): AuthSession | null {
   // Browser-stored demo credentials are useful for local UI work only. A

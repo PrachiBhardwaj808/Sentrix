@@ -15,7 +15,7 @@ export function openIncidentReport(alert: Alert, guard?: Guard | null): boolean 
 
   const assignedGuard = guard?.name || alert.assignedGuardName || "Not assigned";
   reportWindow.document.write(`<!doctype html>
-<html><head><title>BorderLens Incident ${escapeHtml(alert.id)}</title>
+<html><head><title>Sentrix Incident ${escapeHtml(alert.id)}</title>
 <style>
 body{font-family:Arial,sans-serif;color:#0f172a;margin:40px;line-height:1.45}
 h1{font-size:20px;letter-spacing:2px;border-bottom:2px solid #0284c7;padding-bottom:12px}
@@ -26,7 +26,7 @@ img{width:100%;max-height:480px;object-fit:contain;background:#0b1320;margin-top
 .note{background:#f0f6fc;border:1px solid #cbdceb;padding:14px}
 @media print{body{margin:20px}.no-print{display:none}}
 </style></head><body>
-<h1>BORDERLENS // INCIDENT REPORT</h1>
+<h1>SENTRIX // INCIDENT REPORT</h1>
 <div class="grid">
 <div><div class="label">Incident ID</div><div class="value">${escapeHtml(alert.id)}</div></div>
 <div><div class="label">Status</div><div class="value">${escapeHtml(alert.status)}</div></div>

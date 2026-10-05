@@ -1,4 +1,4 @@
-# BorderLens with Docker
+# Sentrix with Docker
 
 This setup runs the complete local demo stack:
 

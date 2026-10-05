@@ -29,7 +29,7 @@ def send_alert_notification(alert: Mapping[str, Any]) -> dict[str, Any]:
     message = messaging.Message(
         topic=str(status["topic"]),
         notification=messaging.Notification(
-            title=f"BorderLens {str(alert.get('level') or 'normal').upper()} alert",
+            title=f"Sentrix {str(alert.get('level') or 'normal').upper()} alert",
             body=str(alert.get("eventType") or "New surveillance incident")[:240],
         ),
         data={

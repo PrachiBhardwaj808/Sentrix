@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
           <div className="flex h-8 w-8 items-center justify-center bg-[#0284C7] text-white"><BarChart3 className="h-4 w-4" /></div>
           <div>
             <h1 className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">OPERATIONS ANALYTICS // READINESS BOARD</h1>
-            <p className="mt-0.5 text-[11px] font-sans text-[#475569]">Detection volume, response workflow, and sector readiness from the current BorderLens state.</p>
+            <p className="mt-0.5 text-[11px] font-sans text-[#475569]">Detection volume, response workflow, and sector readiness from the current Sentrix state.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2"><DemoModeBadge /><Link href="/alerts" className="border border-[#CBDCEB] bg-[#F0F6FC] px-3 py-2 text-[10px] font-bold uppercase text-[#0369A1] hover:bg-[#E0F2FE]">OPEN EVIDENCE →</Link></div>

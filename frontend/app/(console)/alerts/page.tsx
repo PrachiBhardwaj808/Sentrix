@@ -171,7 +171,7 @@ export default function AlertsPage() {
       return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const csv = exportRows().map((row) => row.map(escapeCsv).join(",")).join("\r\n");
-    downloadFile(`\uFEFF${csv}`, `borderlens-alert-report-${new Date().toISOString().slice(0, 10)}.csv`, "text/csv;charset=utf-8");
+    downloadFile(`\uFEFF${csv}`, `sentrix-alert-report-${new Date().toISOString().slice(0, 10)}.csv`, "text/csv;charset=utf-8");
   };
 
   const exportColoredSheet = () => {
@@ -182,8 +182,8 @@ export default function AlertsPage() {
       const values = exportRows().find((row) => row[0] === alert.id) || [];
       return `<tr style="background:${color.hex};color:#fff;font-weight:700">${values.map((value) => `<td>${escapeHtml(value)}</td>`).join("")}</tr>`;
     }).join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>BorderLens Alert Report</title><style>body{font-family:Arial,sans-serif;color:#172033;margin:28px}h1{font-size:18px;margin-bottom:6px}p{font-size:12px;color:#475569}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #cbd5e1;padding:7px;text-align:left}th{background:#172033;color:#fff;white-space:nowrap}td{color:#fff}tr{print-color-adjust:exact;-webkit-print-color-adjust:exact}</style></head><body><h1>BorderLens Alert Report</h1><p>Generated ${escapeHtml(new Date().toLocaleString())}. Each incident row is filled with its severity/status colour.</p><table><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></body></html>`;
-    downloadFile(html, `borderlens-incidents-coloured-${new Date().toISOString().slice(0, 10)}.html`, "text/html;charset=utf-8");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Sentrix Alert Report</title><style>body{font-family:Arial,sans-serif;color:#172033;margin:28px}h1{font-size:18px;margin-bottom:6px}p{font-size:12px;color:#475569}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #cbd5e1;padding:7px;text-align:left}th{background:#172033;color:#fff;white-space:nowrap}td{color:#fff}tr{print-color-adjust:exact;-webkit-print-color-adjust:exact}</style></head><body><h1>Sentrix Alert Report</h1><p>Generated ${escapeHtml(new Date().toLocaleString())}. Each incident row is filled with its severity/status colour.</p><table><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+    downloadFile(html, `sentrix-incidents-coloured-${new Date().toISOString().slice(0, 10)}.html`, "text/html;charset=utf-8");
   };
 
   return (

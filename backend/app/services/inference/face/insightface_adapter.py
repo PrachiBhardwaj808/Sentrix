@@ -1,6 +1,6 @@
 """Optional InsightFace adapter for consent-approved local demonstrations.
 
-The dependency is imported lazily so a normal BorderLens install still works
+The dependency is imported lazily so a normal Sentrix install still works
 without InsightFace, ONNX Runtime, or model weights. This adapter only returns
 face locations and an internal embedding availability flag; it never sends
 embeddings to the browser or asserts a person's identity.

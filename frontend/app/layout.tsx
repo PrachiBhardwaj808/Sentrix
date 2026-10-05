@@ -3,7 +3,7 @@ import "./globals.css";
 import { ThemeController } from "@/components/theme/ThemeController";
 
 export const metadata: Metadata = {
-  title: "BorderLens — Intelligent Border Video Analytics",
+  title: "Sentrix — AI GIS Intelligence for Safer Communities",
   description: "Next-generation stark tactical surveillance command terminal and human accountability guard duty system for border security.",
 };
 

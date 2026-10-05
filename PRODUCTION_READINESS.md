@@ -1,4 +1,4 @@
-# BorderLens / IBVAP production-readiness record
+# Sentrix production-readiness record
 
 This document records what is implemented in the local codebase, what was
 verified during this hardening pass, and what must still be completed before a

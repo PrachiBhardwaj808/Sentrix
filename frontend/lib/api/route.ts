@@ -1,6 +1,6 @@
 "use client";
 
-const API_ROUTE_STORAGE_KEY = "borderlens_api_base_url";
+const API_ROUTE_STORAGE_KEY = "sentrix_api_base_url";
 
 export const DEFAULT_BROWSER_API_BASE_URL = "/api";
 export const DEFAULT_SERVER_API_BASE_URL = "http://127.0.0.1:8000/api";

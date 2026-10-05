@@ -7,8 +7,8 @@ export function ThemeController() {
   useEffect(() => {
     const syncTheme = () => applyTheme(getStoredTheme());
     syncTheme();
-    window.addEventListener("borderlens-theme-change", syncTheme);
-    return () => window.removeEventListener("borderlens-theme-change", syncTheme);
+    window.addEventListener("sentrix-theme-change", syncTheme);
+    return () => window.removeEventListener("sentrix-theme-change", syncTheme);
   }, []);
 
   return null;

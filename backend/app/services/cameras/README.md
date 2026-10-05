@@ -1,4 +1,4 @@
-# BorderLens Camera Relay & Streaming Architecture
+# Sentrix Camera Relay & Streaming Architecture
 
 This service connects on-premise LAN cameras (such as Dahua, CP Plus, and Hikvision IP cameras) streaming over RTSP to web browsers via a low-latency HLS and WebRTC media relay powered by MediaMTX.
 

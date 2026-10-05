@@ -1,6 +1,6 @@
 export type ConsoleTheme = "light" | "dark";
 
-export const THEME_STORAGE_KEY = "borderlens.console.theme";
+export const THEME_STORAGE_KEY = "sentrix.console.theme";
 
 export function getStoredTheme(): ConsoleTheme {
   if (typeof window === "undefined") return "light";
@@ -21,6 +21,6 @@ export function applyTheme(theme: ConsoleTheme): void {
   // ThemeController listens for this event. Only emit when the value really
   // changed; otherwise the listener would call applyTheme again forever.
   if (previousTheme !== theme) {
-    window.dispatchEvent(new CustomEvent("borderlens-theme-change", { detail: theme }));
+  window.dispatchEvent(new CustomEvent("sentrix-theme-change", { detail: theme }));
   }
 }

@@ -1,1 +1,1 @@
-"""Outbound notification adapters used by the BorderLens backend."""
+"""Outbound notification adapters used by the Sentrix backend."""

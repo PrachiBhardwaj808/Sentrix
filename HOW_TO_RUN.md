@@ -1,4 +1,4 @@
-# Border Surveillance System (BorderLens) - Setup & Run Guide
+# Sentrix AI GIS Intelligence Platform - Setup & Run Guide
 
 ## Prerequisites
 - Python 3.10+ (tested on Python 3.12)
@@ -14,7 +14,7 @@
 This launches all 3 required background services:
 1. **MediaMTX Relay**: on port 8888 (HLS), 9997 (API), 8554 (RTSP)
 2. **Django Backend**: on http://127.0.0.1:8000
-3. **Next.js Frontend (BorderLens)**: on http://localhost:3000
+3. **Next.js Frontend (Sentrix)**: on http://localhost:3000
 
 ---
 
