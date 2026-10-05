@@ -242,7 +242,7 @@ export default function LoginPage() {
           </form>
         )}
 
-        {process.env.NODE_ENV !== "production" && <div className="mt-6 border border-[#CBDCEB] bg-[#F0F6FC] p-3 text-[10px] text-[#475569]">
+        {process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true" && process.env.NODE_ENV !== "production" && <div className="mt-6 border border-[#CBDCEB] bg-[#F0F6FC] p-3 text-[10px] text-[#475569]">
           <div className="font-bold uppercase tracking-widest text-[#0369A1]">DEMO ACCESS TIERS</div>
           <div className="mt-2 space-y-1 font-mono">
             <div><strong>ADMIN-001</strong> // administrator</div>

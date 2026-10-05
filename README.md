@@ -11,7 +11,7 @@
 
 An AI-GIS public safety and community resilience intelligence platform for Indian districts. It detects, locates, predicts, maps impact, and coordinates response to risks while keeping authorized people in the decision loop.
 
-Sentrix now includes the project-reframed MVP described in `GeoLens_New_Features_and_Project_Reframing.docx`: an interactive multi-layer GIS intelligence map, real-time incident mapping, explainable risk scores, predictive hotspots, community vulnerability mapping, community incident reports, AI/community correlation, nearby resource identification, response and route recommendations, critical-infrastructure impact, heatmaps, historical analytics, and a human-reviewed emergency/disaster extension path.
+Sentrix now includes the project-reframed MVP described in `GeoLens_New_Features_and_Project_Reframing.docx`: an interactive multi-layer GIS intelligence map, real-time incident mapping, explainable risk scores, predictive hotspots, community vulnerability mapping, community incident reports, AI/community correlation, nearby resource identification, response and route recommendations, critical-infrastructure impact, heatmaps, historical analytics, and a human-reviewed emergency/disaster extension path. Operational records and GIS reference layers are backend-owned; the production UI does not fabricate records when the API is empty.
 
 
 
@@ -114,7 +114,7 @@ Features are categorized strictly according to codebase implementation state:
 | **ANPR (Number Plate Reading)** | **Implemented** | License plate extraction and OCR using EasyOCR and bounding-box localization. |
 | **Face Detection & Candidate Flagging** | **Implemented** | Face bounding-box localization using OpenCV/Haar with an extensible InsightFace embeddings interface. |
 | **Geotagged Alerts & Telemetry** | **Implemented** | Real-time alert ingestion with latitude, longitude, camera ID, sector code, and risk severity. |
-| **Satellite & Tactical GIS Map** | **Implemented** | Dual-layer SVG tactical GIS and periodic ArcGIS World Imagery basemap integration in `TacticalSectorMap.tsx`. |
+| **Interactive GIS Map** | **Implemented** | Leaflet map with pan/zoom, OpenStreetMap-compatible tiles, clickable incident markers, popups, backend-owned layers, risk rings, road overlays, and fit-to-data behavior in `frontend/components/map/`. |
 | **Alert Lifecycle Management** | **Implemented** | Full state transition pipeline: `open` -> `acknowledged` -> `investigating` -> `resolved` / `false_positive`. |
 | **Responder Dispatch with OTP** | **Implemented** | Guard assignment workflow featuring 6-digit OTP verification for secure physical handover. |
 | **Cryptographic Evidence Hashing** | **Implemented** | SHA-256 hashing of evidence snapshots with optional smart-contract audit trail integration. |
@@ -123,7 +123,7 @@ Features are categorized strictly according to codebase implementation state:
 | **Short-Term Risk Forecast** | **Partial** | Spatial risk scoring calculated from historic sector alert rates and camera density. |
 | **Nearest-Responder Assignment** | **Partial** | Haversine and PostGIS geospatial distance calculation for nearest guard identification. |
 | **Camera Coverage-Gap Analysis** | **Partial** | Camera FOV cone rendering and sector boundary overlap analysis in the GIS canvas. |
-| **Citizen & NGO Report Intake** | **Planned** | Web-based intake portal for public missing-person reports and field incident flagging. |
+| **Citizen & NGO Report Intake** | **Implemented** | Authenticated community georeport intake with optional evidence attachment and human review status. |
 
 *Note: All AI detection outputs require human operator review before action is taken. Satellite layers provide periodic/static reference imagery, not live video.*
 
@@ -139,7 +139,7 @@ Sentrix is built around privacy-by-design principles to ensure compliance with e
 4. **Demographic Neutrality**: Models perform object classification and geometric feature matching. Demographic profiling, age/gender inference, and appearance matching are strictly prohibited.
 5. **Comprehensive Audit Logs**: Every view, query, candidate match, and status update generates an immutable audit record containing the timestamp, operator ID, and action.
 6. **Retention and Deletion Controls**: Unflagged video frame caches are discarded immediately after inference. Reference biometrics are automatically purged upon case resolution.
-7. **Synthetic Demo Data**: The repository default configuration uses synthetic test data and local camera loops for evaluation.
+7. **Synthetic Demo Data**: Demo fixtures are opt-in only through `SENTRIX_ENABLE_DEMO_DATA=true` and `NEXT_PUBLIC_ENABLE_DEMO_MODE=true`. Production defaults keep fixtures, demo credentials, and demo OTPs disabled.
 
 ---
 
@@ -255,6 +255,35 @@ Follow this 5-minute script to demonstrate the core capabilities of Sentrix:
 - **Node.js**: Version 18+ (tested on Node.js 20+)
 - **Database**: PostgreSQL 16 with PostGIS extension (or local SQLite for dev testing)
 - **OS**: Windows 10/11, macOS, or Linux
+
+### Production-safe local setup
+
+Install backend dependencies from the three requirement files and frontend dependencies from the frontend lockfile:
+
+```bash
+cd backend
+python -m venv venv
+venv/bin/pip install -r requirements-web.txt -r requirements-services.txt -r requirements-ai.txt
+cd ../frontend
+npm ci
+```
+
+Copy `backend/.env.example` and `frontend/.env.example` to deployment-specific environment files. Keep these values disabled unless the environment is an explicitly isolated presentation instance:
+
+```text
+SENTRIX_ENABLE_DEMO_DATA=false
+AUTH_ALLOW_DEMO_USERS=false
+AUTH_ALLOW_DEMO_OTP=false
+NEXT_PUBLIC_ENABLE_DEMO_MODE=false
+```
+
+The map defaults to OpenStreetMap-compatible tiles for local development. Configure `NEXT_PUBLIC_MAP_TILE_URL` and `NEXT_PUBLIC_MAP_TILE_ATTRIBUTION` to a permitted, rate-limited tile provider before public deployment. Provision verified geography through the authenticated `POST /api/geospatial` endpoint; the map reads `communities`, `resources`, `infrastructure`, and `roads` from `/api/bootstrap`.
+
+To remove legacy presentation fixtures from a local state file without clearing operator-created alerts, run:
+
+```bash
+DJANGO_DEBUG=true DJANGO_SECRET_KEY=<local-only-secret> python manage.py clear_demo_data
+```
 
 ---
 
@@ -442,4 +471,3 @@ Sentrix incorporates open-source libraries and public frameworks:
 
 ### License
 [MIT License](LICENSE)
-

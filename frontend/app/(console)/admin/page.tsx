@@ -440,6 +440,7 @@ export default function CameraSettingsAdminPage() {
         </div>
       </section>
 
+      {process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true" && <>
       {/* Non-biometric demo profiles */}
       <section className="border border-[#CBDCEB] bg-[#FFFFFF] p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#CBDCEB] pb-4">
@@ -495,6 +496,7 @@ export default function CameraSettingsAdminPage() {
           ))}
         </div>
       </section>
+      </>}
 
       {/* Simplified Camera Cards List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

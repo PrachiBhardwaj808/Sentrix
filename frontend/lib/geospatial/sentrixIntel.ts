@@ -65,10 +65,11 @@ export const communityVulnerability = (community: CommunityRecord, alerts: Alert
 export const routeRecommendation = (point: GeoPoint, alerts: Alert[], roads: RoadRecord[]) => {
   const nearbyRisks = alerts.filter((alert) => alert.status !== "resolved" && haversineKm(point, alert.coordinates) <= 2.5);
   const affectedRoad = roads.find((road) => road.status === "affected" && road.points.some((roadPoint) => haversineKm(point, roadPoint) < 2.5));
+  const openRoad = roads.find((road) => road.status === "open");
   return {
-    route: affectedRoad ? "North Ridge Road → East Market Connector" : "North Ridge Road → direct approach",
+    route: affectedRoad ? `${openRoad?.name || "Available route"} → approach via alternate segment` : openRoad ? `${openRoad.name} → direct approach` : "No configured response route",
     avoid: affectedRoad?.name || (nearbyRisks.length ? "Active incident perimeter" : "No restricted segment identified"),
-    reason: affectedRoad ? "Affected segment excluded from route recommendation." : nearbyRisks.length ? "Route keeps response team outside the active incident perimeter." : "No affected road or high-risk segment is within the response corridor.",
+    reason: affectedRoad ? "Affected segment excluded from route recommendation." : nearbyRisks.length ? "Route keeps response team outside the active incident perimeter." : roads.length ? "No affected road or high-risk segment is within the response corridor." : "Add verified road records to enable route guidance.",
   };
 };
 

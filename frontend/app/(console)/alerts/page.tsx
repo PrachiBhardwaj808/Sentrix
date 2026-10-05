@@ -341,7 +341,7 @@ export default function AlertsPage() {
                     ) : (
                       <div className="mt-2 space-y-2">
                         <select value={reviewProfileId} onChange={(event) => setReviewProfileId(event.target.value)} className="w-full border border-[#FCD34D] bg-[#FFFFFF] px-2 py-2 text-[10px] font-bold text-[#0F172A]">
-                          <option value="">SELECT DEMO PROFILE</option>
+                          <option value="">SELECT CONSENTED PROFILE</option>
                           {demoProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.displayName} // {profile.qrCode}</option>)}
                         </select>
                         <button type="button" onClick={() => void handleMarkPotentialMatch()} disabled={!reviewProfileId || isMarkingPotentialMatch} className="w-full border border-[#D97706] bg-[#D97706] px-3 py-2 text-[10px] font-bold uppercase text-white hover:bg-[#B45309] disabled:cursor-not-allowed disabled:opacity-40">
@@ -424,9 +424,9 @@ export default function AlertsPage() {
                           <span className={dispatchOtp.status === "verified" ? "text-[#166534]" : "text-[#0369A1]"}>
                             GUARD OTP: {dispatchOtp.status.replace("_", " ").toUpperCase()}
                           </span>
-                          <span className="text-[#64748B]">{dispatchOtp.maskedPhone || "LOCAL DEMO"}</span>
+                          <span className="text-[#64748B]">{dispatchOtp.maskedPhone || "DELIVERY NOT CONFIGURED"}</span>
                         </div>
-                        {dispatchOtp.demoOtp && dispatchOtp.status === "demo_ready" && (
+                        {process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true" && dispatchOtp.demoOtp && dispatchOtp.status === "demo_ready" && (
                           <div className="border border-[#FCD34D] bg-[#FFFBEB] px-2 py-1 text-[10px] font-bold text-[#92400E]">
                             DEMO OTP: {dispatchOtp.demoOtp} // configure Exotel for live delivery
                           </div>

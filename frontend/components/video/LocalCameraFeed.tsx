@@ -94,6 +94,7 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
   const lastAnalyticsAtRef = useRef(0);
   const [analysisCameraId, setAnalysisCameraId] = useState("");
   const selectedAnalyticsCameraId = analysisCameraId || cameras[0]?.id || "";
+  const selectedAnalyticsCamera = cameras.find((camera) => camera.id === selectedAnalyticsCameraId);
 
   const resetAnalysis = useCallback(() => {
     setDetections([]);
@@ -498,7 +499,8 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
         detection.label.toLowerCase() === "face" || detection.source === "face_detection"
       ));
       const localReviewKey = `${sourceMode}:${sourceLabel}`;
-      if (hasFace && (!selectedAnalyticsCameraId || backendStatus === "offline") && !reportedFaceReviewRef.current.has(localReviewKey)) {
+      const alertCoordinates = selectedAnalyticsCamera?.coordinates;
+      if (hasFace && alertCoordinates && (!selectedAnalyticsCameraId || backendStatus === "offline") && !reportedFaceReviewRef.current.has(localReviewKey)) {
         reportedFaceReviewRef.current.add(localReviewKey);
         addAlert({
           level: "medium",
@@ -506,7 +508,7 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
           sourceCameraName: sourceLabel,
           eventType: "Face detected — operator review required",
           confidence: Math.round(Math.max(...result.detections.filter((detection) => detection.label.toLowerCase() === "face" || detection.source === "face_detection").map((detection) => detection.confidence), 0) * 100),
-          coordinates: { lat: 31.65, lng: 74.88 },
+          coordinates: alertCoordinates,
           objectClass: "Person",
           evidenceUrl: evidenceFrame,
           sector: "Live Feed",
@@ -530,7 +532,7 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
           const right = candidate.type === "plate" ? normalized(rawValue) : rawValue.toLowerCase();
           return left === right;
         });
-        if (!entry) return;
+        if (!entry || !alertCoordinates) return;
         const matchKey = `${entry.id}:${rawValue}:${sourceLabel}`;
         if (reportedMatchesRef.current.has(matchKey)) return;
         reportedMatchesRef.current.add(matchKey);
@@ -541,7 +543,7 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
           sourceCameraName: sourceLabel,
           eventType: `${detection.source === "anpr" ? "ANPR" : "FACE"} WATCHLIST MATCH // ${entry.label}`,
           confidence: Math.round(detection.confidence * 100),
-          coordinates: { lat: 31.65, lng: 74.88 },
+          coordinates: alertCoordinates,
           objectClass: detection.source === "anpr" ? "Vehicle" : "Person",
           evidenceUrl: evidenceFrame,
           sector: "Live Feed",
