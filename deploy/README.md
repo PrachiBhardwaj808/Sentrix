@@ -70,10 +70,11 @@ CSV/KML import, routing/forecast analytics, and multi-instance-safe state
 operations remain future work. Managed backups and restore drills are also
 required.
 The backend is deliberately configured for one synchronous Gunicorn worker
-until state storage is made safe for concurrent workers. Login attempts are
-throttled per operator ID in Django's local-memory cache; this is a useful
-brute-force speed bump, not a distributed rate limiter or DDoS control, and its
-counter resets on process restart. Caddy now checks a short-lived HttpOnly
+until the state document is normalized for concurrent operations. Login
+attempts are throttled per operator ID in the private Redis cache in production
+(local development uses Django's in-memory cache); cache loss resets the
+counters. This limits repeated credential guesses, not distributed attacks or
+DDoS. Caddy now checks a short-lived HttpOnly
 operator-session cookie for proxied HLS playlists and segments, but this flow
 still needs end-to-end verification with the production Caddy/MediaMTX images
 and browsers (including native HLS); the live PostGIS database path also has
