@@ -47,6 +47,8 @@ services:
     depends_on:
       database:
         condition: service_healthy
+      cache:
+        condition: service_healthy
     environment:
       DJANGO_DEBUG: "false"
       DJANGO_ALLOWED_HOSTS: ${SENTRIX_DOMAIN:?Set SENTRIX_DOMAIN in deploy/.env},localhost,127.0.0.1,backend
@@ -64,6 +66,7 @@ services:
       DJANGO_DB_HOST: database
       DJANGO_DB_PORT: "5432"
       SENTRIX_STATE_STORAGE: postgres
+      SENTRIX_REDIS_URL: redis://cache:6379/0
       MEDIA_RELAY_BASE_URL: http://media-relay:8888
       MEDIA_RELAY_WEBRTC_URL: http://media-relay:8889
       MEDIA_RELAY_API_URL: http://media-relay:9997
@@ -86,6 +89,7 @@ services:
       - application
       - media
       - storage
+      - cache-net
 
   database:
     image: postgis/postgis:16-3.5
@@ -104,6 +108,18 @@ services:
     networks:
       - storage
 
+  cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - cache-net
+
   media-relay:
     image: bluenviron/mediamtx:latest
     restart: unless-stopped
@@ -117,6 +133,8 @@ networks:
   media:
     internal: true
   storage:
+    internal: true
+  cache-net:
     internal: true
 
 volumes:
