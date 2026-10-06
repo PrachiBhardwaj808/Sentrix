@@ -44,6 +44,9 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    depends_on:
+      database:
+        condition: service_healthy
     environment:
       DJANGO_DEBUG: "false"
       DJANGO_ALLOWED_HOSTS: ${SENTRIX_DOMAIN:?Set SENTRIX_DOMAIN in deploy/.env},localhost,127.0.0.1,backend
@@ -54,6 +57,12 @@ services:
       DJANGO_SESSION_COOKIE_SECURE: "true"
       DJANGO_CSRF_COOKIE_SECURE: "true"
       DJANGO_SECURE_HSTS_SECONDS: "31536000"
+      DJANGO_DB_ENGINE: postgis
+      DJANGO_DB_NAME: ${POSTGRES_DB:?Set POSTGRES_DB in deploy/.env}
+      DJANGO_DB_USER: ${POSTGRES_USER:?Set POSTGRES_USER in deploy/.env}
+      DJANGO_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+      DJANGO_DB_HOST: database
+      DJANGO_DB_PORT: "5432"
       MEDIA_RELAY_BASE_URL: http://media-relay:8888
       MEDIA_RELAY_WEBRTC_URL: http://media-relay:8889
       MEDIA_RELAY_API_URL: http://media-relay:9997
@@ -75,6 +84,24 @@ services:
     networks:
       - application
       - media
+      - storage
+
+  database:
+    image: postgis/postgis:16-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in deploy/.env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in deploy/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - storage
 
   media-relay:
     image: bluenviron/mediamtx:latest
@@ -88,8 +115,11 @@ networks:
   application:
   media:
     internal: true
+  storage:
+    internal: true
 
 volumes:
   backend_data:
+  database_data:
   caddy_data:
   caddy_config:
