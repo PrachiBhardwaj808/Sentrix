@@ -52,8 +52,10 @@ docker compose --env-file deploy/.env -f docker-compose.production.yml logs -f e
 ```
 
 Caddy must be able to reach the domain on ports 80 and 443 to provision a
-certificate. Back up the `backend_data`, `caddy_data`, and `caddy_config`
-volumes, and practice restoring them before relying on the service.
+certificate. Back up PostgreSQL with `pg_dump` (a live copy of its volume is
+not a consistent backup), and back up the `backend_data`, `caddy_data`, and
+`caddy_config` volumes. Practice restoring both the database dump and volumes
+before relying on the service.
 
 ## Current boundaries
 
