@@ -279,7 +279,7 @@ export default function CameraSettingsAdminPage() {
             </label>
             <label className="space-y-1.5 text-[10px] font-bold uppercase tracking-wider text-[#475569]">
               Login passcode *
-              <input required minLength={6} type="password" value={guardForm.passcode} onChange={(event) => updateGuardForm("passcode", event.target.value)} placeholder="Minimum 6 characters" className={inputClass} />
+              <input required minLength={10} type="password" value={guardForm.passcode} onChange={(event) => updateGuardForm("passcode", event.target.value)} placeholder="Minimum 10 characters" className={inputClass} />
             </label>
             <label className="space-y-1.5 text-[10px] font-bold uppercase tracking-wider text-[#475569]">
               Call sign
