@@ -75,7 +75,9 @@ def _nearby_roads(items: Any, center: dict[str, float], radius_km: float, limit:
     return [entry[1] for entry in scored[:limit]]
 
 
-def build_workspace(state: dict[str, Any], lat: float, lng: float, radius_km: float = 4.0, limit: int = 25) -> dict[str, Any]:
+def build_workspace(
+    state: dict[str, Any], lat: float, lng: float, radius_km: float = 4.0, limit: int = 25
+) -> dict[str, Any]:
     center = {"lat": lat, "lng": lng}
     radius_km = max(0.1, min(float(radius_km), 50.0))
     limit = max(1, min(int(limit), 50))
