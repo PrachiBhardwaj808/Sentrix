@@ -60,9 +60,12 @@ Application state and Django auth currently use local JSON/SQLite storage;
 the volume makes that data persistent but is not a substitute for the planned
 PostgreSQL/PostGIS migration, managed backups, or multi-instance operation.
 The backend is deliberately configured for one synchronous Gunicorn worker
-until state storage is made safe for concurrent workers. The media proxy
-routes are reachable through the public HTTPS origin and do not yet enforce
-the Sentrix operator session; do not use this deployment with sensitive camera
-feeds until relay authorization is added. Caddy alone is not a WAF. AI model
+until state storage is made safe for concurrent workers. Login attempts are
+throttled per operator ID in Django's local-memory cache; this is a useful
+brute-force speed bump, not a distributed rate limiter or DDoS control, and its
+counter resets on process restart. Caddy now checks a short-lived HttpOnly
+operator-session cookie for proxied HLS playlists and segments, but this flow
+still needs end-to-end verification with the production Caddy/MediaMTX images
+and browsers (including native HLS). Caddy alone is not a WAF. AI model
 accuracy, real camera connectivity, external SMS delivery, and identity-provider
 configuration must be validated in the target environment.
