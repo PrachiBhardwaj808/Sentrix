@@ -24,7 +24,6 @@ from collections import OrderedDict
 from threading import RLock
 from typing import Any
 
-
 COORDINATE_PATTERN = re.compile(
     r"^\s*(?P<lat>[+-]?\d{1,3}(?:\.\d+)?)\s*[,;\s]\s*(?P<lng>[+-]?\d{1,3}(?:\.\d+)?)\s*$"
 )
