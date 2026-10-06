@@ -16,6 +16,27 @@ import { CommunityRecord, InfrastructureRecord, RoadRecord } from "@/lib/geospat
 import { AuthSession, getAuthSession } from "@/lib/auth";
 import { DEFAULT_SERVER_API_BASE_URL, getBrowserApiBaseUrl } from "@/lib/api/route";
 
+export interface MapSearchResult {
+  id: string;
+  kind: string;
+  label: string;
+  sublabel: string;
+  lat: number;
+  lng: number;
+  source: string;
+  recordId?: string;
+}
+
+export interface NearbyAssets {
+  center: { lat: number; lng: number };
+  radiusKm: number;
+  cameras: Camera[];
+  alerts: Alert[];
+  communities: CommunityRecord[];
+  resources: ResourceRecord[];
+  infrastructure: InfrastructureRecord[];
+}
+
 export interface BlockchainStatus {
   configured: boolean;
   connected: boolean;
@@ -453,6 +474,27 @@ export const backendApi = {
     const bbox = [west, south, east, north].join(",");
     return request<Pick<BootstrapData, "communities" | "resources" | "infrastructure" | "roads">>(
       `/geospatial?bbox=${encodeURIComponent(bbox)}`
+    );
+  },
+  mapSearch: (query: string, limit = 8) =>
+    request<{ query: string; provider: string; results: MapSearchResult[] }>(
+      `/map/search?q=${encodeURIComponent(query)}&limit=${encodeURIComponent(String(limit))}`
+    ),
+  nearbyAssets: (lat: number, lng: number, radiusKm = 4, limit = 8) =>
+    request<NearbyAssets>(
+      `/map/nearby?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}&radiusKm=${encodeURIComponent(String(radiusKm))}&limit=${encodeURIComponent(String(limit))}`
+    ),
+  mapFeatures: (recordType: string, options: { page?: number; pageSize?: number; bbox?: string; severity?: string; status?: string; sector?: string; source?: string } = {}) => {
+    const params = new URLSearchParams({ recordType });
+    if (options.page) params.set("page", String(options.page));
+    if (options.pageSize) params.set("pageSize", String(options.pageSize));
+    if (options.bbox) params.set("bbox", options.bbox);
+    if (options.severity) params.set("severity", options.severity);
+    if (options.status) params.set("status", options.status);
+    if (options.sector) params.set("sector", options.sector);
+    if (options.source) params.set("source", options.source);
+    return request<{ recordType: string; page: number; pageSize: number; total: number; features: unknown[] }>(
+      `/map/features?${params.toString()}`
     );
   },
   systemAction: (action: "lockdown" | "abort_lockdown" | "defcon", level?: number, actorName?: string) =>
