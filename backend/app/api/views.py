@@ -649,8 +649,8 @@ def create_guard(request: HttpRequest) -> JsonResponse:
     passcode = str(payload.get("passcode") or "")
     if not name or not rank or not badge_id or not operator_id:
         return _error("name, rank, badgeId, and operatorId are required")
-    if len(passcode) < 6:
-        return _error("passcode must be at least 6 characters")
+    if len(passcode) < 10:
+        return _error("passcode must be at least 10 characters")
     if str(payload.get("status") or "off_duty") not in {
         "on_post",
         "patrolling",
