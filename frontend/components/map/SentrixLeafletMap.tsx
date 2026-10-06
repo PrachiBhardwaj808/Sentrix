@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { Alert, Camera, ResourceRecord, Sector } from "@/lib/types";
 import { CommunityRecord, InfrastructureRecord, RoadRecord, communityVulnerability, riskScoreForArea } from "@/lib/geospatial/sentrixIntel";
+import { backendApi } from "@/lib/api/client";
 import "leaflet/dist/leaflet.css";
 
 export interface MapLayerVisibility {
@@ -51,6 +52,11 @@ export default function SentrixLeafletMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const hasInitialFitRef = useRef(false);
+  const [visibleCommunities, setVisibleCommunities] = useState(communities);
+  const [visibleResources, setVisibleResources] = useState(resources);
+  const [visibleInfrastructure, setVisibleInfrastructure] = useState(infrastructure);
+  const [visibleRoads, setVisibleRoads] = useState(roads);
 
   const tileUrl = process.env.NEXT_PUBLIC_MAP_TILE_URL || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
   const tileAttribution = process.env.NEXT_PUBLIC_MAP_TILE_ATTRIBUTION || "&copy; OpenStreetMap contributors";
@@ -71,6 +77,46 @@ export default function SentrixLeafletMap({
   }, [tileAttribution, tileUrl]);
 
   useEffect(() => {
+    setVisibleCommunities(communities);
+    setVisibleResources(resources);
+    setVisibleInfrastructure(infrastructure);
+    setVisibleRoads(roads);
+  }, [communities, infrastructure, resources, roads]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    let requestNumber = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const loadViewportFeatures = () => {
+      const bounds = map.getBounds();
+      const currentRequest = ++requestNumber;
+      void backendApi.geospatialInBounds(bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth())
+        .then((features) => {
+          if (currentRequest !== requestNumber) return;
+          setVisibleCommunities(features.communities);
+          setVisibleResources(features.resources);
+          setVisibleInfrastructure(features.infrastructure);
+          setVisibleRoads(features.roads);
+        })
+        .catch(() => {
+          // Non-PostGIS local deployments retain their bootstrap feature set.
+        });
+    };
+    const scheduleViewportLoad = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(loadViewportFeatures, 150);
+    };
+    map.on("moveend", scheduleViewportLoad);
+    scheduleViewportLoad();
+    return () => {
+      map.off("moveend", scheduleViewportLoad);
+      if (timer) clearTimeout(timer);
+      requestNumber += 1;
+    };
+  }, []);
+
+  useEffect(() => {
     const map = mapRef.current;
     const overlay = overlayRef.current;
     if (!map || !overlay) return;
@@ -79,34 +125,37 @@ export default function SentrixLeafletMap({
     const points: L.LatLngExpression[] = [
       ...alerts.map((item) => [item.coordinates.lat, item.coordinates.lng] as L.LatLngExpression),
       ...cameras.map((item) => [item.coordinates.lat, item.coordinates.lng] as L.LatLngExpression),
-      ...communities.map((item) => [item.coordinates.lat, item.coordinates.lng] as L.LatLngExpression),
-      ...resources.map((item) => [item.coordinates.lat, item.coordinates.lng] as L.LatLngExpression),
+      ...visibleCommunities.map((item) => [item.coordinates.lat, item.coordinates.lng] as L.LatLngExpression),
+      ...visibleResources.map((item) => [item.coordinates.lat, item.coordinates.lng] as L.LatLngExpression),
     ];
-    if (points.length > 1) map.fitBounds(L.latLngBounds(points), { padding: [32, 32], maxZoom: 15 });
-    else if (points.length === 1) map.setView(points[0], 14);
+    if (!hasInitialFitRef.current && points.length > 0) {
+      if (points.length > 1) map.fitBounds(L.latLngBounds(points), { padding: [32, 32], maxZoom: 15 });
+      else map.setView(points[0], 14);
+      hasInitialFitRef.current = true;
+    }
 
-    if (layers.roads) roads.forEach((road) => {
+    if (layers.roads) visibleRoads.forEach((road) => {
       L.polyline(road.points.map((point) => [point.lat, point.lng] as L.LatLngExpression), { color: roadColor(road.status), weight: road.status === "open" ? 4 : 6, dashArray: road.status === "open" ? undefined : "10 7" })
         .bindPopup(`<strong>${escapeHtml(road.name)}</strong><br>Status: ${escapeHtml(road.status.replace("_", " "))}`)
         .addTo(overlay);
     });
 
-    if (layers.riskZones) communities.forEach((community) => {
+    if (layers.riskZones) visibleCommunities.forEach((community) => {
       const score = riskScoreForArea(community.coordinates, alerts, cameras);
       L.circle([community.coordinates.lat, community.coordinates.lng], { radius: score >= 70 ? 700 : score >= 38 ? 500 : 320, color: score >= 70 ? "#DC2626" : score >= 38 ? "#D97706" : "#16A34A", fillOpacity: 0.12, dashArray: "6 4" }).addTo(overlay);
     });
 
-    if (layers.vulnerability) communities.forEach((community) => {
+    if (layers.vulnerability) visibleCommunities.forEach((community) => {
       const score = communityVulnerability(community, alerts, cameras);
       L.circle([community.coordinates.lat, community.coordinates.lng], { radius: Math.max(80, score * 12), color: "#A855F7", fill: false, weight: 2, opacity: 0.75 }).addTo(overlay);
     });
 
     if (layers.heatmap) alerts.forEach((alert) => L.circle([alert.coordinates.lat, alert.coordinates.lng], { radius: 800, color: "#FB923C", fillColor: "#FB923C", fillOpacity: 0.11, stroke: false }).addTo(overlay));
 
-    if (layers.infrastructure) infrastructure.forEach((item) => L.circleMarker([item.coordinates.lat, item.coordinates.lng], { radius: 7, color: "#0F172A", fillColor: "#FDE68A", fillOpacity: 1 }).bindPopup(`<strong>${escapeHtml(item.name)}</strong><br>${escapeHtml(item.type)} · ${escapeHtml(item.criticality)} criticality`).addTo(overlay));
+    if (layers.infrastructure) visibleInfrastructure.forEach((item) => L.circleMarker([item.coordinates.lat, item.coordinates.lng], { radius: 7, color: "#0F172A", fillColor: "#FDE68A", fillOpacity: 1 }).bindPopup(`<strong>${escapeHtml(item.name)}</strong><br>${escapeHtml(item.type)} · ${escapeHtml(item.criticality)} criticality`).addTo(overlay));
     if (layers.cameras) cameras.forEach((camera) => L.circleMarker([camera.coordinates.lat, camera.coordinates.lng], { radius: 8, color: "#38BDF8", fillColor: "#0F172A", fillOpacity: 1 }).bindPopup(`<strong>${escapeHtml(camera.name || camera.id)}</strong><br>${escapeHtml(camera.status)} · ${camera.aiActive ? "AI active" : "AI inactive"}`).addTo(overlay));
-    if (layers.resources) resources.forEach((resource) => L.circleMarker([resource.coordinates.lat, resource.coordinates.lng], { radius: 8, color: "#0F172A", fillColor: resource.available ? "#34D399" : "#64748B", fillOpacity: 1 }).bindPopup(`<strong>${escapeHtml(resource.name)}</strong><br>${escapeHtml(resource.type)} · ${resource.available ? `${resource.capacity} ready` : "unavailable"}`).addTo(overlay));
-    if (layers.communities) communities.forEach((community) => {
+    if (layers.resources) visibleResources.forEach((resource) => L.circleMarker([resource.coordinates.lat, resource.coordinates.lng], { radius: 8, color: "#0F172A", fillColor: resource.available ? "#34D399" : "#64748B", fillOpacity: 1 }).bindPopup(`<strong>${escapeHtml(resource.name)}</strong><br>${escapeHtml(resource.type)} · ${resource.available ? `${resource.capacity} ready` : "unavailable"}`).addTo(overlay));
+    if (layers.communities) visibleCommunities.forEach((community) => {
       const vulnerability = communityVulnerability(community, alerts, cameras);
       L.circleMarker([community.coordinates.lat, community.coordinates.lng], { radius: 8, color: "#F3E8FF", fillColor: "#A855F7", fillOpacity: 0.95 }).bindPopup(`<strong>${escapeHtml(community.name)}</strong><br>Population: ${community.population.toLocaleString()}<br>Vulnerability: ${vulnerability}/100`).addTo(overlay);
     });
@@ -120,7 +169,7 @@ export default function SentrixLeafletMap({
       if (sector.polygon.length < 3) return;
       L.polygon(sector.polygon.map((point) => [point.lat, point.lng] as L.LatLngExpression), { color: "#38BDF8", fillOpacity: 0.04, dashArray: "4 5" }).bindPopup(`<strong>${escapeHtml(sector.name)}</strong><br>Sector ${escapeHtml(sector.code)}`).addTo(overlay);
     });
-  }, [alerts, cameras, communities, infrastructure, layers, onSelectAlert, resources, roads, sectors, selectedAlertId]);
+  }, [alerts, cameras, layers, onSelectAlert, sectors, selectedAlertId, visibleCommunities, visibleInfrastructure, visibleResources, visibleRoads]);
 
   return <div ref={containerRef} className="h-full min-h-[580px] w-full bg-[#0B192C]" aria-label="Interactive Sentrix GIS map" />;
 }
