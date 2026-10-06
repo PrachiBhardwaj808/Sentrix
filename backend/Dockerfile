@@ -14,6 +14,8 @@ RUN apt-get update \
        libglib2.0-0 \
        libgl1 \
        libgomp1 \
+       gdal-bin \
+       libgdal-dev \
        curl \
     && rm -rf /var/lib/apt/lists/*
 
