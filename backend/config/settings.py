@@ -51,7 +51,8 @@ MIDDLEWARE = [
 LOCAL_DATA_DIR = BASE_DIR / ".localdata"
 LOCAL_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-if os.getenv("DJANGO_DB_ENGINE", "sqlite").strip().lower() == "postgis":
+database_engine = os.getenv("DJANGO_DB_ENGINE", "sqlite").strip().lower()
+if database_engine == "postgis":
     database_name = os.getenv("DJANGO_DB_NAME", "").strip()
     database_user = os.getenv("DJANGO_DB_USER", "").strip()
     database_password = os.getenv("DJANGO_DB_PASSWORD", "")
@@ -77,6 +78,26 @@ else:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": LOCAL_DATA_DIR / "django.sqlite3",
+        }
+    }
+
+redis_cache_url = os.getenv("SENTRIX_REDIS_URL", "").strip()
+if redis_cache_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": redis_cache_url,
+            "TIMEOUT": 300,
+            "KEY_PREFIX": "sentrix",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "sentrix-local-cache",
+            "TIMEOUT": 300,
+            "OPTIONS": {"MAX_ENTRIES": 1000},
         }
     }
 
