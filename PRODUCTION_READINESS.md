@@ -17,7 +17,8 @@ claim that an AI model is accurate in every border environment.
 | Runtime monitoring | Implemented locally | `/api/monitoring/metrics`, dashboard model-health panel, bounded p50/p95 windows, inference FPS and dropped-frame fields | Export to Prometheus/OpenTelemetry and alert on camera/model thresholds |
 | Integrity audit | Implemented locally | Local SHA-256 hash chain for alert/activity mutations plus authenticated verification endpoint `/api/audit-chain` | Put state on durable append-only storage, restrict access, and test restore/rotation procedures |
 | Security configuration | Safer defaults | Secret required when debug is false, restrictive CORS/hosts defaults, optional HTTPS/HSTS/security-cookie settings, JPEG upload validation | Set all production values, use TLS, managed secrets, CSRF trusted origins, firewall rules, and external review |
-| Workflow congestion | Partially mitigated | Only a small camera preview set is mounted on the dashboard; alert views are bounded; local metrics are bounded | Add list virtualization/pagination to every high-volume operator view and load-test the maximum camera count |
+| Workflow congestion | Partially mitigated | Map viewport APIs are paginated (`/api/map/features`); alert views are bounded; local metrics are bounded | Add list virtualization to every high-volume operator view and load-test the maximum camera count |
+| Map and location search | Implemented locally | Offline-first search across cameras, alerts, communities, infrastructure, roads, checkpoints plus coordinate input; configurable Nominatim provider with cache and rate limits; per-location workspace (`/api/map/workspace`) aggregating alerts, cameras, guards, and nearby assets | Set production tile provider and geocoder limits, review Nominatim usage policy, and test viewport loading at full data volume |
 
 ## End-to-end workflow
 
@@ -96,6 +97,11 @@ in the deployment inventory.
 - Keep Firebase service-account material, Exotel credentials, relay credentials,
   model files, and blockchain signer keys on the backend secret store only.
 - Keep `AUTH_ALLOW_DEMO_USERS=false` and `AUTH_ALLOW_DEMO_OTP=false`.
+- Keep `SENTRIX_ENABLE_DEMO_DATA=false`; `seed_demo` refuses to run without the
+  explicit opt-in flag and `clear_demo_data` removes only known demo IDs.
+- Set `SENTRIX_GEOCODER_PROVIDER=local` unless an approved remote provider with
+  usage limits is configured; set `NEXT_PUBLIC_MAP_TILE_URL` to the approved
+  tile provider with attribution.
 - Configure Firestore rules so clients cannot write alert projections/events
   directly; only the backend service account may write them. Add backups and
   retention/lifecycle policies for evidence storage.
