@@ -1,6 +1,7 @@
 from django.urls import path
 
 from app.api import views
+from app.api.routes import map as map_routes
 
 
 urlpatterns = [
@@ -23,10 +24,10 @@ urlpatterns = [
     path("api/bootstrap", views.bootstrap),
     path("api/geospatial", views.geospatial),
     path("api/geospatial/<str:collection>/<str:item_id>", views.geospatial_detail),
-    path("api/map/search", views.map_search),
-    path("api/map/nearby", views.nearby_assets),
-    path("api/map/features", views.map_features),
-    path("api/map/workspace", views.location_workspace),
+    path("api/map/search", map_routes.map_search),
+    path("api/map/nearby", map_routes.nearby_assets),
+    path("api/map/features", map_routes.map_features),
+    path("api/map/workspace", map_routes.location_workspace),
     path("api/blockchain/status", views.blockchain_status),
     path("api/firebase/status", views.firebase_status_view),
     path("api/inference/frame", views.inference_frame),
