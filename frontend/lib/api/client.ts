@@ -37,6 +37,30 @@ export interface NearbyAssets {
   infrastructure: InfrastructureRecord[];
 }
 
+export interface LocationWorkspace {
+  center: { lat: number; lng: number };
+  radiusKm: number;
+  summary: {
+    openAlerts: number;
+    criticalUnresolved: number;
+    camerasNearby: number;
+    camerasOffline: number;
+    communities: number;
+    resources: number;
+    infrastructure: number;
+    roads: number;
+  };
+  tasks: { needsReview: string[]; offlineCameras: Array<string | null> };
+  alerts: Alert[];
+  cameras: Camera[];
+  guards: Array<Record<string, unknown>>;
+  communities: CommunityRecord[];
+  resources: ResourceRecord[];
+  infrastructure: InfrastructureRecord[];
+  roads: RoadRecord[];
+  recentActivity: Array<Record<string, unknown>>;
+}
+
 export interface BlockchainStatus {
   configured: boolean;
   connected: boolean;
@@ -483,6 +507,10 @@ export const backendApi = {
   nearbyAssets: (lat: number, lng: number, radiusKm = 4, limit = 8) =>
     request<NearbyAssets>(
       `/map/nearby?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}&radiusKm=${encodeURIComponent(String(radiusKm))}&limit=${encodeURIComponent(String(limit))}`
+    ),
+  locationWorkspace: (lat: number, lng: number, radiusKm = 4) =>
+    request<LocationWorkspace>(
+      `/map/workspace?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}&radiusKm=${encodeURIComponent(String(radiusKm))}`
     ),
   mapFeatures: (recordType: string, options: { page?: number; pageSize?: number; bbox?: string; severity?: string; status?: string; sector?: string; source?: string } = {}) => {
     const params = new URLSearchParams({ recordType });
