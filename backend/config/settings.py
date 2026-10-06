@@ -51,12 +51,34 @@ MIDDLEWARE = [
 LOCAL_DATA_DIR = BASE_DIR / ".localdata"
 LOCAL_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": LOCAL_DATA_DIR / "django.sqlite3",
+if os.getenv("DJANGO_DB_ENGINE", "sqlite").strip().lower() == "postgis":
+    database_name = os.getenv("DJANGO_DB_NAME", "").strip()
+    database_user = os.getenv("DJANGO_DB_USER", "").strip()
+    database_password = os.getenv("DJANGO_DB_PASSWORD", "")
+    database_host = os.getenv("DJANGO_DB_HOST", "").strip()
+    if not all((database_name, database_user, database_password, database_host)):
+        raise ImproperlyConfigured(
+            "DJANGO_DB_NAME, DJANGO_DB_USER, DJANGO_DB_PASSWORD, and DJANGO_DB_HOST are required for PostGIS"
+        )
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": database_name,
+            "USER": database_user,
+            "PASSWORD": database_password,
+            "HOST": database_host,
+            "PORT": os.getenv("DJANGO_DB_PORT", "5432"),
+            "CONN_MAX_AGE": 60,
+            "OPTIONS": {"connect_timeout": 5},
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": LOCAL_DATA_DIR / "django.sqlite3",
+        }
+    }
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
