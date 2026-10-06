@@ -1,11 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { useMemo, useState } from "react";
-import { Ambulance, Building2, CheckCircle2, Flame, Hospital, MapPinned, Radio, Route, Send, ShieldAlert, Users, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Ambulance, Building2, CheckCircle2, Flame, Hospital, MapPinned, Radio, Route, Send, ShieldAlert, Upload, Users, X } from "lucide-react";
 import { Alert, Camera, ResourceRecord, Sector } from "@/lib/types";
 import { CommunityRecord, InfrastructureRecord, RoadRecord, correlatedAlertIds, communitiesNear, communityVulnerability, infrastructureNear, nearestResources, riskBandForScore, riskScoreForArea, routeRecommendation } from "@/lib/geospatial/sentrixIntel";
 import { cn } from "@/lib/utils";
+import { getAuthSession } from "@/lib/auth";
+import { backendApi } from "@/lib/api/client";
+import { useIBVAPStore } from "@/lib/store/useIBVAPStore";
 import type { MapLayerVisibility } from "./SentrixLeafletMap";
 
 const SentrixLeafletMap = dynamic(() => import("./SentrixLeafletMap"), {
@@ -66,6 +69,14 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   const [layers, setLayers] = useState<MapLayerVisibility>({ incidents: true, cameras: true, communities: true, resources: true, roads: true, riskZones: true, vulnerability: true, heatmap: false, infrastructure: true });
   const [report, setReport] = useState<CommunityReportInput>({ category: "suspicious activity", description: "", reporterName: "", coordinates: { lat: 20.5937, lng: 78.9629 }, evidenceUrl: "", attachmentName: "" });
   const [reportSent, setReportSent] = useState(false);
+  const [canImportGeoJson, setCanImportGeoJson] = useState(false);
+  const [geoJsonCollection, setGeoJsonCollection] = useState<"communities" | "resources" | "infrastructure" | "roads">("communities");
+  const [geoJsonImporting, setGeoJsonImporting] = useState(false);
+  const [geoJsonImportMessage, setGeoJsonImportMessage] = useState("");
+
+  useEffect(() => {
+    setCanImportGeoJson(getAuthSession()?.tier === "admin");
+  }, []);
 
   const selectedAlert = alerts.find((alert) => alert.id === selectedAlertId) || null;
   const selectedPoint = selectedAlert?.coordinates || communities[0]?.coordinates || cameras[0]?.coordinates || { lat: 20.5937, lng: 78.9629 };
@@ -86,12 +97,41 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
     setReport((current) => ({ ...current, description: "" }));
   };
 
+  const importGeoJsonFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setGeoJsonImportMessage("Import files must be 5 MB or smaller.");
+      return;
+    }
+    setGeoJsonImporting(true);
+    setGeoJsonImportMessage("");
+    try {
+      const document = JSON.parse(await file.text()) as unknown;
+      const result = await backendApi.importGeoJson(geoJsonCollection, document);
+      await useIBVAPStore.getState().hydrateFromBackend();
+      setGeoJsonImportMessage(`Imported ${result.imported} verified ${geoJsonCollection} feature${result.imported === 1 ? "" : "s"}.`);
+    } catch (error) {
+      setGeoJsonImportMessage(error instanceof Error ? error.message : "GeoJSON import failed.");
+    } finally {
+      setGeoJsonImporting(false);
+    }
+  };
+
   return (
     <div className={cn("space-y-4 font-mono", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3 border border-[#CBDCEB] bg-white p-4 shadow-sm">
         <div><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><MapPinned className="h-4 w-4 text-[#0284C7]" /> SENTRIX INTERACTIVE GIS</div><p className="mt-1 text-[11px] font-sans text-[#475569]">Live backend-owned incidents, cameras, response resources, community impact and infrastructure layers.</p></div>
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase"><span className="border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-1 text-[#475569]">{alerts.length} EVENTS</span><span className={cn("border px-2 py-1", overallRiskBand === "HIGH" ? "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" : overallRiskBand === "MEDIUM" ? "border-[#FCD34D] bg-[#FFFBEB] text-[#92400E]" : "border-[#86EFAC] bg-[#F0FDF4] text-[#166534]")}>{overallRiskBand} RISK // {overallRiskScore}</span></div>
       </div>
+
+      {canImportGeoJson && <section className="flex flex-wrap items-end gap-3 border border-[#CBDCEB] bg-white p-3 shadow-sm" aria-label="Administrator GeoJSON import">
+        <div className="min-w-48 flex-1"><label htmlFor="geojson-collection" className="block text-[10px] font-bold uppercase tracking-wider text-[#475569]">Import layer</label><select id="geojson-collection" value={geoJsonCollection} onChange={(event) => setGeoJsonCollection(event.target.value as typeof geoJsonCollection)} className="mt-1 w-full border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-2 text-xs"><option value="communities">Communities (Point)</option><option value="resources">Resources (Point)</option><option value="infrastructure">Infrastructure (Point)</option><option value="roads">Roads (LineString)</option></select></div>
+        <label className="min-w-56 flex-1 text-[10px] font-bold uppercase tracking-wider text-[#475569]">GeoJSON FeatureCollection<input type="file" accept=".geojson,.json,application/geo+json,application/json" onChange={(event) => void importGeoJsonFile(event)} disabled={geoJsonImporting} className="mt-1 block w-full border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-1.5 text-xs font-normal normal-case" /></label>
+        <div role="status" aria-live="polite" className="min-w-48 flex-1 text-[10px] text-[#475569]">{geoJsonImporting ? "Validating and importing features…" : geoJsonImportMessage || "Admin only · max 500 features · 5 MB"}</div>
+        <Upload className="h-4 w-4 text-[#0284C7]" aria-hidden="true" />
+      </section>}
 
       <div className="flex flex-wrap items-center gap-1 border border-[#CBDCEB] bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#475569]"><span className="text-[#0284C7]">COLLECT</span><span>→</span><span className="text-[#0284C7]">DETECT</span><span>→</span><span className="text-[#0284C7]">LOCATE</span><span>→</span><span className="text-[#0284C7]">CORRELATE</span><span>→</span><span className="text-[#0284C7]">ASSESS</span><span>→</span><span className="text-[#0284C7]">RESPOND</span></div>
 
