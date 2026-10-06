@@ -39,7 +39,9 @@ domain for `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`,
 `CORS_ALLOWED_ORIGINS`, `WEBAUTHN_RP_ID`, and `WEBAUTHN_ORIGIN`. Configure
 approved SMS/identity-provider credentials and other required integrations
 using a secret manager where available. Keep demo users, demo OTP, and demo
-data disabled. Never commit either `.env` file.
+data disabled. Replace `POSTGRES_PASSWORD` in `deploy/.env` with a unique
+random secret (for example, generate one with `openssl rand -hex 32`). Never
+commit either `.env` file or use the example database password.
 
 After DNS and firewall rules are ready:
 
@@ -56,9 +58,12 @@ volumes, and practice restoring them before relying on the service.
 ## Current boundaries
 
 This stack is not a declaration that every production requirement is done.
-Application state and Django auth currently use local JSON/SQLite storage;
-the volume makes that data persistent but is not a substitute for the planned
-PostgreSQL/PostGIS migration, managed backups, or multi-instance operation.
+Production API state now bootstraps into PostgreSQL as one JSONB document; the
+old JSON file is used only to seed a new database. The database runs PostGIS,
+but geospatial collections have not yet been normalized into spatial tables
+and indexed geometries, so GIS filtering/analysis is still application-side.
+Managed backups, restore drills, and multi-instance-safe state operations are
+still required.
 The backend is deliberately configured for one synchronous Gunicorn worker
 until state storage is made safe for concurrent workers. Login attempts are
 throttled per operator ID in Django's local-memory cache; this is a useful
