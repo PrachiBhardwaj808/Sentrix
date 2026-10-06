@@ -14,8 +14,11 @@
 		reverse_proxy backend:8000
 	}
 
-	@media path /relay-media/* /CAM-*
+	@media path /relay-media/*
 	handle @media {
+		forward_auth backend:8000 {
+			uri /api/media/authorize
+		}
 		reverse_proxy media-relay:8888
 	}
 
