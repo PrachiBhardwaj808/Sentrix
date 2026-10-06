@@ -61,10 +61,13 @@ def delete_spatial_feature(collection: str, record_id: str) -> None:
 
 
 def sync_spatial_features(state: dict[str, Any]) -> None:
-    """Rebuild the spatial projection once at startup from the canonical state."""
+    """Seed the spatial projection once at startup from the canonical state."""
     if not _enabled():
         return
     with transaction.atomic(), connection.cursor() as cursor:
+        cursor.execute("SELECT EXISTS (SELECT 1 FROM sentrix_spatial_features)")
+        if cursor.fetchone()[0]:
+            return
         cursor.execute("DELETE FROM sentrix_spatial_features")
         for collection in SPATIAL_COLLECTIONS:
             for record in state.get(collection, []):
