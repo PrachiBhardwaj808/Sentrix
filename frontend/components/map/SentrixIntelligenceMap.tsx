@@ -7,12 +7,13 @@ import { Alert, Camera, ResourceRecord, Sector } from "@/lib/types";
 import { CommunityRecord, InfrastructureRecord, RoadRecord, correlatedAlertIds, communitiesNear, communityVulnerability, infrastructureNear, nearestResources, riskBandForScore, riskScoreForArea, routeRecommendation } from "@/lib/geospatial/sentrixIntel";
 import { cn } from "@/lib/utils";
 import { getAuthSession } from "@/lib/auth";
-import { MapSearchResult, NearbyAssets, backendApi } from "@/lib/api/client";
+import { MapSearchResult, LocationWorkspace, NearbyAssets, backendApi } from "@/lib/api/client";
 import { useIBVAPStore } from "@/lib/store/useIBVAPStore";
 import { MapSearchBox } from "./MapSearchBox";
 import { MapControls, MeasureMode } from "./MapControls";
 import { DEFAULT_MAP_FILTERS, MapFilters, MapFilterState } from "./MapFilters";
 import { CreateLocationDialog } from "./CreateLocationDialog";
+import { LocationWorkspacePanel } from "./LocationWorkspacePanel";
 import type { LeafletMapHandle, MapFocus, MapLayerVisibility } from "./SentrixLeafletMap";
 
 const SentrixLeafletMap = dynamic(() => import("./SentrixLeafletMap"), {
@@ -79,6 +80,9 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   const [measureResult, setMeasureResult] = useState("");
   const [createPoint, setCreatePoint] = useState<{ lat: number; lng: number } | null>(null);
   const [nearby, setNearby] = useState<NearbyAssets | null>(null);
+  const [workspace, setWorkspace] = useState<LocationWorkspace | null>(null);
+  const [workspaceLabel, setWorkspaceLabel] = useState("");
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const mapHandle = useRef<LeafletMapHandle | null>(null);
   const [report, setReport] = useState<CommunityReportInput>({ category: "suspicious activity", description: "", reporterName: "", coordinates: { lat: 20.5937, lng: 78.9629 }, evidenceUrl: "", attachmentName: "" });
   const [reportSent, setReportSent] = useState(false);
@@ -116,10 +120,25 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   const overallRiskBand = riskBandForScore(overallRiskScore);
   const toggleLayer = (key: keyof MapLayerVisibility) => setLayers((current) => ({ ...current, [key]: !current[key] }));
 
+  const loadWorkspace = (lat: number, lng: number, label: string) => {
+    setWorkspaceLabel(label);
+    setWorkspaceLoading(true);
+    void backendApi.locationWorkspace(lat, lng, 4)
+      .then((data) => setWorkspace(data))
+      .catch(() => setWorkspace(null))
+      .finally(() => setWorkspaceLoading(false));
+  };
+
   const handleSearchSelect = (result: MapSearchResult) => {
     setSearchFocus({ lat: result.lat, lng: result.lng, zoom: 14, label: result.label });
     setLocateError("");
     if (result.kind === "alert" && result.recordId) setSelectedAlertId(result.recordId);
+    loadWorkspace(result.lat, result.lng, `${result.label} · ${result.sublabel}`);
+  };
+
+  const handleMapClick = (point: { lat: number; lng: number }) => {
+    setCreatePoint(point);
+    loadWorkspace(point.lat, point.lng, `Map point ${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`);
   };
 
   useEffect(() => {
@@ -211,7 +230,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
               searchFocus={searchFocus}
               filteredAlerts={filteredAlerts}
               measureMode={measureMode}
-              onMapClick={(point) => setCreatePoint(point)}
+              onMapClick={handleMapClick}
               onCursorChange={setCursor}
               onLocateError={setLocateError}
               onMeasureResult={setMeasureResult}
@@ -253,6 +272,18 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
           </div>
 
           <aside className="space-y-4 border-t border-[#CBDCEB] bg-white p-4 xl:border-l xl:border-t-0">
+            {(workspace || workspaceLoading) && (
+              <LocationWorkspacePanel
+                label={workspaceLabel || "Selected location"}
+                workspace={workspace}
+                loading={workspaceLoading}
+                onClose={() => {
+                  setWorkspace(null);
+                  setWorkspaceLabel("");
+                }}
+                onSelectAlert={setSelectedAlertId}
+              />
+            )}
             <div className="flex items-center justify-between border-b border-[#CBDCEB] pb-2"><span className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">IMPACT INSPECTOR</span><span className="text-[10px] text-[#0284C7]">HUMAN REVIEW</span></div>
             {selectedAlert ? <>
               <div className="border border-[#CBDCEB] bg-[#F8FBFE] p-3"><div className="flex items-start justify-between gap-2"><div><div className="text-[10px] font-bold uppercase text-[#64748B]">SELECTED INCIDENT</div><div className="mt-1 text-sm font-bold text-[#0F172A]">{selectedAlert.eventType}</div></div><button type="button" onClick={() => setSelectedAlertId(null)} className="text-[#64748B]" aria-label="Close incident inspector"><X className="h-4 w-4" /></button></div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div><span className="block text-[#64748B]">SOURCE</span><strong>{selectedAlert.evidenceSource === "community_report" ? "COMMUNITY" : "AI / CAMERA"}</strong></div><div><span className="block text-[#64748B]">SEVERITY</span><strong className={selectedAlert.level === "critical" ? "text-[#DC2626]" : "text-[#D97706]"}>{selectedAlert.level.toUpperCase()}</strong></div><div><span className="block text-[#64748B]">LOCATION</span><strong>{selectedAlert.coordinates.lat.toFixed(4)}, {selectedAlert.coordinates.lng.toFixed(4)}</strong></div><div><span className="block text-[#64748B]">CORRELATED</span><strong>{selectedCorrelations.length} SOURCE LINK{selectedCorrelations.length === 1 ? "" : "S"}</strong></div></div></div>
