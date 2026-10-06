@@ -85,11 +85,8 @@ def media_authorize(request: HttpRequest) -> JsonResponse:
     if len(parts) < 2 or parts[0] != "relay-media":
         return _error("invalid media path", 403)
 
-    from ..services.cameras.relay import sanitize_path_name
-
     path_name = parts[1]
-    cameras = repository.snapshot().get("cameras", [])
-    if not any(sanitize_path_name(str(camera.get("id") or "")) == path_name for camera in cameras):
+    if not repository.has_camera_path(path_name):
         return _error("camera is not registered", 404)
     return JsonResponse({"authorized": True})
 
