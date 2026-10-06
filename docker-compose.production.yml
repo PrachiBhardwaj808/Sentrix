@@ -63,6 +63,7 @@ services:
       DJANGO_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
       DJANGO_DB_HOST: database
       DJANGO_DB_PORT: "5432"
+      SENTRIX_STATE_STORAGE: postgres
       MEDIA_RELAY_BASE_URL: http://media-relay:8888
       MEDIA_RELAY_WEBRTC_URL: http://media-relay:8889
       MEDIA_RELAY_API_URL: http://media-relay:9997
