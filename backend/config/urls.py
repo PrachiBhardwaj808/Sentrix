@@ -26,6 +26,7 @@ urlpatterns = [
     path("api/map/search", views.map_search),
     path("api/map/nearby", views.nearby_assets),
     path("api/map/features", views.map_features),
+    path("api/map/workspace", views.location_workspace),
     path("api/blockchain/status", views.blockchain_status),
     path("api/firebase/status", views.firebase_status_view),
     path("api/inference/frame", views.inference_frame),
