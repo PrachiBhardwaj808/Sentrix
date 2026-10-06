@@ -8,7 +8,9 @@ from backend.app.services.location_workspace import build_workspace, haversine_k
 class LocationWorkspaceTests(unittest.TestCase):
     def test_haversine_orders_nearby_first(self) -> None:
         center = {"lat": 28.6, "lng": 77.2}
-        self.assertLess(haversine_km(center, {"lat": 28.61, "lng": 77.21}), haversine_km(center, {"lat": 29.0, "lng": 78.0}))
+        near = haversine_km(center, {"lat": 28.61, "lng": 77.21})
+        far = haversine_km(center, {"lat": 29.0, "lng": 78.0})
+        self.assertLess(near, far)
 
     def test_workspace_groups_everything_for_location(self) -> None:
         state = {
