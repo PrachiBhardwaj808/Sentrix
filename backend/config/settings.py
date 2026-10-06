@@ -86,6 +86,7 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE", str(8 * 1024 * 1024)))
 
 # Put the deployed Vercel origin here. Sensitive API operations also enforce
 # the signed operator session and role in the view layer.
