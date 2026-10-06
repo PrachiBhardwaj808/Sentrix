@@ -42,7 +42,9 @@ class MapSearchTests(unittest.TestCase):
     def test_parses_direct_coordinates(self) -> None:
         parsed = parse_coordinate_input("28.6139, 77.2090")
         self.assertIsNotNone(parsed)
-        assert parsed is not None
+        if parsed is None:
+            self.fail("coordinate input should parse")
+            return
         self.assertAlmostEqual(parsed["lat"], 28.6139)
         self.assertAlmostEqual(parsed["lng"], 77.209)
 
