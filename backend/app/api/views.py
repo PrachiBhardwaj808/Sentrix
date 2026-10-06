@@ -68,6 +68,31 @@ def health(request: HttpRequest) -> JsonResponse:
 
 
 @require_http_methods(["GET"])
+def media_authorize(request: HttpRequest) -> JsonResponse:
+    """Authorize a proxied HLS request using the operator's short-lived session cookie."""
+    session_token = request.COOKIES.get("sentrix_media_session", "")
+    if not session_token:
+        return _error("media session is required", 401)
+    request.META["HTTP_AUTHORIZATION"] = f"Bearer {session_token}"
+    session = _session_from_request(request)
+    if not session:
+        return _error("media session has expired or was revoked", 401)
+
+    forwarded_uri = request.headers.get("X-Forwarded-Uri", "").split("?", 1)[0]
+    parts = [part for part in forwarded_uri.strip("/").split("/") if part]
+    if len(parts) < 2 or parts[0] != "relay-media":
+        return _error("invalid media path", 403)
+
+    from ..services.cameras.relay import sanitize_path_name
+
+    path_name = parts[1]
+    cameras = repository.snapshot().get("cameras", [])
+    if not any(sanitize_path_name(str(camera.get("id") or "")) == path_name for camera in cameras):
+        return _error("camera is not registered", 404)
+    return JsonResponse({"authorized": True})
+
+
+@require_http_methods(["GET"])
 def monitoring_metrics(request: HttpRequest) -> JsonResponse:
     session = _session_from_request(request)
     if not session or session.get("tier") not in {"admin", "command"}:
