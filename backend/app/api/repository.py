@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from copy import deepcopy
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from threading import RLock
@@ -136,6 +137,33 @@ class ApiRepository:
                 upsert_spatial_feature(collection, item)
             self._persist()
             return deepcopy(item)
+
+    def upsert_many(self, collection: str, records: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+        transaction_context = nullcontext()
+        if self._postgres_state_enabled():
+            from django.db import transaction
+
+            transaction_context = transaction.atomic()
+        saved: list[dict[str, Any]] = []
+        with self._lock, transaction_context:
+            items = self._state.setdefault(collection, [])
+            for record in records:
+                operation = "insert"
+                for index, existing in enumerate(items):
+                    if existing.get("id") == record.get("id"):
+                        items[index] = deepcopy(record)
+                        operation = "update"
+                        break
+                else:
+                    items.insert(0, deepcopy(record))
+                append_chain_entry(self._state, collection=collection, operation=operation, record=record)
+                if collection in {"communities", "resources", "infrastructure", "roads"}:
+                    from ..services.spatial_store import upsert_spatial_feature
+
+                    upsert_spatial_feature(collection, record)
+                saved.append(deepcopy(record))
+            self._persist()
+        return saved
 
     def update(self, collection: str, item_id: str, changes: dict[str, Any]) -> Optional[dict[str, Any]]:
         with self._lock:
