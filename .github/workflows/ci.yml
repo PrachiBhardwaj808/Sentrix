@@ -20,7 +20,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-*.txt
       - name: Install backend dependencies
-        run: python -m pip install -r backend/requirements-web.txt -r backend/requirements-services.txt "numpy>=1.24,<2"
+        run: python -m pip install -r backend/requirements-web.txt -r backend/requirements-services.txt "numpy>=1.24,<2" "opencv-python-headless>=4.8,<5.0"
       - name: Run backend unit tests
         env:
           DJANGO_DEBUG: "true"
