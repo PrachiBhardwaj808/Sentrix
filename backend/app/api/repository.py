@@ -60,6 +60,9 @@ class ApiRepository:
         self._backfill_audit_chain()
         if self._postgres_state_enabled():
             self._persist()
+            from ..services.spatial_store import sync_spatial_features
+
+            sync_spatial_features(self._state)
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
@@ -127,6 +130,10 @@ class ApiRepository:
             else:
                 items.insert(0, deepcopy(item))
             append_chain_entry(self._state, collection=collection, operation=operation, record=item)
+            if collection in {"communities", "resources", "infrastructure", "roads"}:
+                from ..services.spatial_store import upsert_spatial_feature
+
+                upsert_spatial_feature(collection, item)
             self._persist()
             return deepcopy(item)
 
@@ -137,6 +144,10 @@ class ApiRepository:
                     updated = {**item, **deepcopy(changes), "id": item_id}
                     self._state[collection][index] = updated
                     append_chain_entry(self._state, collection=collection, operation="update", record=updated)
+                    if collection in {"communities", "resources", "infrastructure", "roads"}:
+                        from ..services.spatial_store import upsert_spatial_feature
+
+                        upsert_spatial_feature(collection, updated)
                     self._persist()
                     return deepcopy(updated)
         return None
@@ -148,6 +159,10 @@ class ApiRepository:
                 if item.get("id") == item_id:
                     append_chain_entry(self._state, collection=collection, operation="delete", record=item)
                     del items[index]
+                    if collection in {"communities", "resources", "infrastructure", "roads"}:
+                        from ..services.spatial_store import delete_spatial_feature
+
+                        delete_spatial_feature(collection, item_id)
                     self._persist()
                     return True
         return False
