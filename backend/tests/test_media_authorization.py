@@ -27,7 +27,7 @@ class MediaAuthorizationTests(unittest.TestCase):
             HTTP_X_FORWARDED_URI="/relay-media/NOT-REGISTERED/index.m3u8",
         )
         with patch("backend.app.api.views._session_from_request", return_value={"operatorId": "ADMIN-1"}):
-            with patch("backend.app.api.views.repository.snapshot", return_value={"cameras": [{"id": "CAM-01"}]}):
+            with patch("backend.app.api.views.repository.has_camera_path", return_value=False):
                 response = media_authorize(request)
 
         self.assertEqual(response.status_code, 404)
@@ -39,7 +39,7 @@ class MediaAuthorizationTests(unittest.TestCase):
             HTTP_X_FORWARDED_URI="/relay-media/CAM-01/segment001.ts?token=ignored",
         )
         with patch("backend.app.api.views._session_from_request", return_value={"operatorId": "ADMIN-1"}):
-            with patch("backend.app.api.views.repository.snapshot", return_value={"cameras": [{"id": "CAM-01"}]}):
+            with patch("backend.app.api.views.repository.has_camera_path", return_value=True):
                 response = media_authorize(request)
 
         self.assertEqual(response.status_code, 200)
