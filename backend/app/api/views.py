@@ -18,6 +18,7 @@ from django.views.decorators.http import require_http_methods
 
 from . import blockchain
 from .repository import repository
+from .throttling import RateLimitExceeded, enforce_login_limit
 from ..services.cameras.connection import test_camera_connection
 from ..services.cameras.relay import CameraRelayError, register_camera_relay
 from ..services.inference.live import InferenceConfigurationError, detect_frame
@@ -96,6 +97,12 @@ def auth_login(request: HttpRequest) -> JsonResponse:
     payload = _body(request)
     operator_id = str(payload.get("operatorId") or "").strip()
     passcode = str(payload.get("passcode") or "")
+    try:
+        enforce_login_limit(operator_id)
+    except RateLimitExceeded as exc:
+        response = _error(str(exc), 429)
+        response["Retry-After"] = str(exc.retry_after)
+        return response
     if not operator_id or not passcode:
         return _error("operatorId and passcode are required")
 
