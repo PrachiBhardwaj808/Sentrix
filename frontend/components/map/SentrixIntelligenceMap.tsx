@@ -1,15 +1,19 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Ambulance, Building2, CheckCircle2, Flame, Hospital, MapPinned, Radio, Route, Send, ShieldAlert, Upload, Users, X } from "lucide-react";
 import { Alert, Camera, ResourceRecord, Sector } from "@/lib/types";
 import { CommunityRecord, InfrastructureRecord, RoadRecord, correlatedAlertIds, communitiesNear, communityVulnerability, infrastructureNear, nearestResources, riskBandForScore, riskScoreForArea, routeRecommendation } from "@/lib/geospatial/sentrixIntel";
 import { cn } from "@/lib/utils";
 import { getAuthSession } from "@/lib/auth";
-import { backendApi } from "@/lib/api/client";
+import { MapSearchResult, NearbyAssets, backendApi } from "@/lib/api/client";
 import { useIBVAPStore } from "@/lib/store/useIBVAPStore";
-import type { MapLayerVisibility } from "./SentrixLeafletMap";
+import { MapSearchBox } from "./MapSearchBox";
+import { MapControls, MeasureMode } from "./MapControls";
+import { DEFAULT_MAP_FILTERS, MapFilters, MapFilterState } from "./MapFilters";
+import { CreateLocationDialog } from "./CreateLocationDialog";
+import type { LeafletMapHandle, MapFocus, MapLayerVisibility } from "./SentrixLeafletMap";
 
 const SentrixLeafletMap = dynamic(() => import("./SentrixLeafletMap"), {
   ssr: false,
@@ -67,6 +71,15 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
 }) => {
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(alerts[0]?.id || null);
   const [layers, setLayers] = useState<MapLayerVisibility>({ incidents: true, cameras: true, communities: true, resources: true, roads: true, riskZones: true, vulnerability: true, heatmap: false, infrastructure: true });
+  const [searchFocus, setSearchFocus] = useState<MapFocus | null>(null);
+  const [filters, setFilters] = useState<MapFilterState>({ ...DEFAULT_MAP_FILTERS });
+  const [measureMode, setMeasureMode] = useState<MeasureMode>(null);
+  const [cursor, setCursor] = useState<{ lat: number; lng: number } | null>(null);
+  const [locateError, setLocateError] = useState("");
+  const [measureResult, setMeasureResult] = useState("");
+  const [createPoint, setCreatePoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearby, setNearby] = useState<NearbyAssets | null>(null);
+  const mapHandle = useRef<LeafletMapHandle | null>(null);
   const [report, setReport] = useState<CommunityReportInput>({ category: "suspicious activity", description: "", reporterName: "", coordinates: { lat: 20.5937, lng: 78.9629 }, evidenceUrl: "", attachmentName: "" });
   const [reportSent, setReportSent] = useState(false);
   const [canImportGeoJson, setCanImportGeoJson] = useState(false);
@@ -80,6 +93,20 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
 
   const selectedAlert = alerts.find((alert) => alert.id === selectedAlertId) || null;
   const selectedPoint = selectedAlert?.coordinates || communities[0]?.coordinates || cameras[0]?.coordinates || { lat: 20.5937, lng: 78.9629 };
+  const filteredAlerts = useMemo(() => alerts.filter((alert) => {
+    if (filters.severity && alert.level !== filters.severity) return false;
+    if (filters.status && alert.status !== filters.status) return false;
+    if (filters.sector && !alert.sector.toLowerCase().includes(filters.sector.toLowerCase())) return false;
+    if (filters.source && (alert.evidenceSource || "") !== filters.source) return false;
+    if (filters.team && !`${alert.assignedGuardName || ""} ${alert.sector}`.toLowerCase().includes(filters.team.toLowerCase())) return false;
+    if (filters.timeRangeHours) {
+      const hours = Number(filters.timeRangeHours);
+      if (Number.isFinite(hours) && Date.now() - new Date(alert.timestamp).getTime() > hours * 3600 * 1000) return false;
+    }
+    if (filters.recordType && filters.recordType !== "alert") return false;
+    return true;
+  }), [alerts, filters]);
+  const visibleAlertsForInspector = filters.severity || filters.status || filters.sector || filters.source || filters.team || filters.timeRangeHours || filters.recordType ? filteredAlerts : alerts;
   const selectedResources = useMemo(() => nearestResources(selectedPoint, resources), [selectedPoint, resources]);
   const selectedCommunities = useMemo(() => communitiesNear(selectedPoint, communities), [selectedPoint, communities]);
   const selectedInfrastructure = useMemo(() => infrastructureNear(selectedPoint, infrastructure), [selectedPoint, infrastructure]);
@@ -88,6 +115,27 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   const overallRiskScore = Math.max(0, ...sectors.map((sector) => riskScoreForArea(sector.centerCoordinates, alerts, cameras)));
   const overallRiskBand = riskBandForScore(overallRiskScore);
   const toggleLayer = (key: keyof MapLayerVisibility) => setLayers((current) => ({ ...current, [key]: !current[key] }));
+
+  const handleSearchSelect = (result: MapSearchResult) => {
+    setSearchFocus({ lat: result.lat, lng: result.lng, zoom: 14, label: result.label });
+    setLocateError("");
+    if (result.kind === "alert" && result.recordId) setSelectedAlertId(result.recordId);
+  };
+
+  useEffect(() => {
+    if (!selectedPoint) return;
+    let cancelled = false;
+    void backendApi.nearbyAssets(selectedPoint.lat, selectedPoint.lng, 4, 5)
+      .then((assets) => {
+        if (!cancelled) setNearby(assets);
+      })
+      .catch(() => {
+        if (!cancelled) setNearby(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAlertId]);
 
   const submitReport = (event: React.FormEvent) => {
     event.preventDefault();
@@ -135,10 +183,74 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
 
       <div className="flex flex-wrap items-center gap-1 border border-[#CBDCEB] bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#475569]"><span className="text-[#0284C7]">COLLECT</span><span>→</span><span className="text-[#0284C7]">DETECT</span><span>→</span><span className="text-[#0284C7]">LOCATE</span><span>→</span><span className="text-[#0284C7]">CORRELATE</span><span>→</span><span className="text-[#0284C7]">ASSESS</span><span>→</span><span className="text-[#0284C7]">RESPOND</span></div>
 
+      <MapSearchBox onSelect={handleSearchSelect} className="w-full" />
+
+      <MapFilters
+        value={filters}
+        onChange={setFilters}
+        sectors={Array.from(new Set(alerts.map((alert) => alert.sector).filter(Boolean)))}
+        teams={Array.from(new Set(alerts.map((alert) => alert.assignedGuardName || "").filter(Boolean)))}
+      />
+
       <div className="overflow-hidden border border-[#CBDCEB] bg-white shadow-sm">
         <div className="flex flex-wrap items-center gap-2 border-b border-[#CBDCEB] bg-[#F0F6FC] p-3"><span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-[#475569]">GIS LAYERS</span>{(Object.keys(layerLabels) as Array<keyof MapLayerVisibility>).map((key) => <button key={key} type="button" onClick={() => toggleLayer(key)} className={cn("border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors", layers[key] ? "border-[#0284C7] bg-[#0284C7] text-white" : "border-[#CBDCEB] bg-white text-[#64748B]")}>{layerLabels[key]}</button>)}</div>
         <div className="grid min-h-[610px] grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="relative min-h-[580px] bg-[#0B192C]"><SentrixLeafletMap sectors={sectors} cameras={cameras} alerts={alerts} communities={communities} resources={resources} infrastructure={infrastructure} roads={roads} layers={layers} selectedAlertId={selectedAlertId} onSelectAlert={setSelectedAlertId} /><div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 border border-[#38BDF8]/40 bg-[#0F172A]/90 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#BAE6FD]"><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#EF4444]" />INCIDENT</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#A855F7]" />COMMUNITY</span><span><i className="mr-1 inline-block h-2 w-2 rotate-45 bg-[#34D399]" />RESOURCE</span><span><i className="mr-1 inline-block h-2 w-2 bg-[#FDE68A]" />INFRASTRUCTURE</span></div></div>
+          <div className="relative min-h-[580px] bg-[#0B192C]">
+            <SentrixLeafletMap
+              ref={mapHandle}
+              sectors={sectors}
+              cameras={cameras}
+              alerts={alerts}
+              communities={communities}
+              resources={resources}
+              infrastructure={infrastructure}
+              roads={roads}
+              layers={layers}
+              selectedAlertId={selectedAlertId}
+              onSelectAlert={setSelectedAlertId}
+              searchFocus={searchFocus}
+              filteredAlerts={filteredAlerts}
+              measureMode={measureMode}
+              onMapClick={(point) => setCreatePoint(point)}
+              onCursorChange={setCursor}
+              onLocateError={setLocateError}
+              onMeasureResult={setMeasureResult}
+            />
+            <div className="absolute left-3 top-3 w-[min(420px,calc(100%-24px))]">
+              <MapSearchBox onSelect={handleSearchSelect} />
+            </div>
+            <div className="absolute right-3 top-3">
+              <MapControls
+                onZoomIn={() => mapHandle.current?.zoomIn()}
+                onZoomOut={() => mapHandle.current?.zoomOut()}
+                onReset={() => mapHandle.current?.reset()}
+                onFullscreen={() => mapHandle.current?.fullscreen()}
+                onLocate={() => mapHandle.current?.locate()}
+                onCopyCenter={() => mapHandle.current?.copyCenter()}
+                onMeasureChange={setMeasureMode}
+                measureMode={measureMode}
+                locateError={locateError}
+                cursor={cursor}
+                centerLabel={searchFocus ? `${searchFocus.lat.toFixed(5)}, ${searchFocus.lng.toFixed(5)}` : "India overview"}
+              />
+            </div>
+            {(measureResult || nearby) && (
+              <div className="absolute bottom-12 left-3 max-w-[min(420px,calc(100%-24px))] border border-[#38BDF8]/40 bg-[#0F172A]/92 px-3 py-2 font-mono text-[10px] text-[#BAE6FD]" role="status">
+                {measureResult && <div>{measureResult}</div>}
+                {nearby && <div className="mt-1">Nearby: {nearby.cameras.length} cameras · {nearby.alerts.length} alerts · {nearby.communities.length} communities.</div>}
+                <div className="mt-1">Click any map point to draft a camera, alert, community, checkpoint, resource, road, or zone record.</div>
+              </div>
+            )}
+            <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 border border-[#38BDF8]/40 bg-[#0F172A]/90 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#BAE6FD]">
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#DC2626]" />CRITICAL</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#EA580C]" />HIGH</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#D97706]" />MEDIUM</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#A855F7]" />COMMUNITY</span>
+              <span><i className="mr-1 inline-block h-2 w-2 rotate-45 bg-[#34D399]" />RESOURCE</span>
+              <span><i className="mr-1 inline-block h-2 w-2 bg-[#FDE68A]" />INFRASTRUCTURE</span>
+              <span>Filtered {visibleAlertsForInspector.length}/{alerts.length}</span>
+            </div>
+          </div>
 
           <aside className="space-y-4 border-t border-[#CBDCEB] bg-white p-4 xl:border-l xl:border-t-0">
             <div className="flex items-center justify-between border-b border-[#CBDCEB] pb-2"><span className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">IMPACT INSPECTOR</span><span className="text-[10px] text-[#0284C7]">HUMAN REVIEW</span></div>
@@ -159,6 +271,14 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
         <section className="border border-[#CBDCEB] bg-white p-4"><div className="mb-3 flex items-center justify-between border-b border-[#CBDCEB] pb-2"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><ShieldAlert className="h-4 w-4 text-[#DC2626]" /> RISK AND VULNERABILITY REGISTER</div><span className="text-[10px] text-[#64748B]">EXPLAINABLE MODEL</span></div><div className="space-y-2">{communities.length ? communities.map((community) => { const risk = riskScoreForArea(community.coordinates, alerts, cameras); const vulnerability = communityVulnerability(community, alerts, cameras); return <div key={community.id} className="border border-[#CBDCEB] bg-[#F8FBFE] p-2.5"><div className="flex items-center justify-between gap-2 text-[10px] font-bold"><span className="truncate text-[#0F172A]">{community.name}</span><span className={scoreTone(Math.max(risk, vulnerability))}>{riskBandForScore(risk)} // RISK {risk}</span></div><div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-[#64748B]"><span>Population <strong className="text-[#0F172A]">{community.population.toLocaleString()}</strong></span><span>Vulnerability <strong className="text-[#A855F7]">{vulnerability}/100</strong></span></div><div className="mt-2 h-1.5 bg-[#E0ECF8]"><div className={cn("h-full", risk >= 70 ? "bg-[#DC2626]" : risk >= 38 ? "bg-[#D97706]" : "bg-[#16A34A]")} style={{ width: `${Math.max(risk, 10)}%` }} /></div></div>; }) : <div className="border border-dashed border-[#CBDCEB] p-4 text-[10px] text-[#64748B]">No community reference records are configured. Add verified geography records to enable impact scoring.</div>}</div></section>
       </div>
       <div className="border border-[#CBDCEB] bg-[#F8FBFE] px-4 py-3 text-[10px] text-[#64748B]">Sentrix ranks evidence, impact context and recommendations for authorized operators. It does not autonomously make law-enforcement or emergency decisions. Community reports and AI alerts require human review.</div>
+      {createPoint && (
+        <CreateLocationDialog
+          point={createPoint}
+          nearestPlace={communitiesNear(createPoint, communities, 12)[0]?.name || sectors[0]?.name || "Map area"}
+          onClose={() => setCreatePoint(null)}
+          onSaved={() => setCreatePoint(null)}
+        />
+      )}
     </div>
   );
 };
