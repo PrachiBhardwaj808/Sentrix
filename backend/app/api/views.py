@@ -736,6 +736,28 @@ def _haversine_km(a: dict[str, Any], b: dict[str, Any]) -> float:
 
 
 @require_http_methods(["GET"])
+def location_workspace(request: HttpRequest) -> JsonResponse:
+    """Everything operators are working on around one map point."""
+    session = _session_from_request(request)
+    if not session:
+        return _error("authenticated operator access is required", 401)
+    from ..services.location_workspace import build_workspace
+
+    try:
+        lat = float(request.GET.get("lat", ""))
+        lng = float(request.GET.get("lng", ""))
+    except (TypeError, ValueError):
+        return _error("lat and lng query parameters are required")
+    if not -90 <= lat <= 90 or not -180 <= lng <= 180:
+        return _error("coordinates are out of range")
+    try:
+        radius_km = float(request.GET.get("radiusKm", "4"))
+    except (TypeError, ValueError):
+        return _error("radiusKm must be numeric")
+    return JsonResponse(build_workspace(repository.snapshot(), lat, lng, radius_km))
+
+
+@require_http_methods(["GET"])
 def blockchain_status(request: HttpRequest) -> JsonResponse:
     return JsonResponse(blockchain.get_status())
 
