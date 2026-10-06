@@ -5,6 +5,7 @@ from app.api import views
 
 urlpatterns = [
     path("api/health", views.health),
+    path("api/media/authorize", views.media_authorize),
     path("api/monitoring/metrics", views.monitoring_metrics),
     path("api/audit-chain", views.audit_chain_status_view),
     path("api/auth/login", views.auth_login),
