@@ -449,6 +449,12 @@ export const backendApi = {
       method: "POST",
       body: JSON.stringify({ collection, geojson }),
     }),
+  geospatialInBounds: (west: number, south: number, east: number, north: number) => {
+    const bbox = [west, south, east, north].join(",");
+    return request<Pick<BootstrapData, "communities" | "resources" | "infrastructure" | "roads">>(
+      `/geospatial?bbox=${encodeURIComponent(bbox)}`
+    );
+  },
   systemAction: (action: "lockdown" | "abort_lockdown" | "defcon", level?: number, actorName?: string) =>
     request(`/system/action`, {
       method: "POST",
