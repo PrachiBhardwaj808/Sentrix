@@ -506,6 +506,25 @@ def geospatial(request: HttpRequest) -> JsonResponse:
     if not session:
         return _error("authenticated operator access is required", 401)
     if request.method == "GET":
+        bbox_parameter = request.GET.get("bbox")
+        if bbox_parameter:
+            try:
+                west, south, east, north = (float(value) for value in bbox_parameter.split(","))
+            except (TypeError, ValueError):
+                return _error("bbox must be west,south,east,north numeric coordinates")
+            if (
+                not -180 <= west <= 180
+                or not -180 <= east <= 180
+                or not -90 <= south <= north <= 90
+                or west > east
+            ):
+                return _error("bbox coordinates are out of range or cross the antimeridian")
+            from ..services.spatial_store import features_in_bbox
+
+            features = features_in_bbox(south, west, north, east)
+            if features is None:
+                return _error("bounding-box queries require the PostGIS deployment", 503)
+            return JsonResponse(features)
         snapshot = repository.snapshot()
         return JsonResponse({collection: snapshot.get(collection, []) for collection in _GEOSPATIAL_COLLECTIONS})
     if session.get("tier") != "admin":
