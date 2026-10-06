@@ -10,6 +10,7 @@ import secrets
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+from django.conf import settings
 from django.core import signing
 from django.contrib.auth.hashers import make_password
 from django.http import HttpRequest, JsonResponse
@@ -1167,7 +1168,19 @@ def camera_stream(request: HttpRequest, camera_id: str) -> JsonResponse:
 
     try:
         stream_info = register_camera_relay(camera)
-        return JsonResponse(stream_info)
+        response = JsonResponse(stream_info)
+        session_token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+        if session_token:
+            response.set_cookie(
+                "sentrix_media_session",
+                session_token,
+                max_age=60 * 60,
+                path="/relay-media/",
+                secure=not settings.DEBUG,
+                httponly=True,
+                samesite="Strict",
+            )
+        return response
     except CameraRelayError as exc:
         return _error(str(exc), 400)
     except Exception as exc:
