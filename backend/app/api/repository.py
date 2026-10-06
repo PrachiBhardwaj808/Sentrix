@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -57,6 +58,8 @@ class ApiRepository:
         self._lock = RLock()
         self._state = self._load()
         self._backfill_audit_chain()
+        if self._postgres_state_enabled():
+            self._persist()
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
@@ -533,29 +536,29 @@ class ApiRepository:
         append_chain_entry(self._state, collection=collection, operation=operation, record=item)
 
     def _load(self) -> dict[str, Any]:
+        if self._postgres_state_enabled():
+            from ..models import ApiStateDocument
+
+            document = ApiStateDocument.objects.filter(key="main").first()
+            if document and isinstance(document.payload, dict):
+                return self._normalize_state(document.payload)
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
             if isinstance(payload, dict) and payload.get("schemaVersion", 0) in {2, 3, 4, STATE_SCHEMA_VERSION}:
-                payload["schemaVersion"] = STATE_SCHEMA_VERSION
-                payload.setdefault("watchlistEntries", [])
-                payload.setdefault("demoProfiles", [])
-                payload.setdefault("communities", [])
-                payload.setdefault("resources", [])
-                payload.setdefault("infrastructure", [])
-                payload.setdefault("roads", [])
-                payload.setdefault("authUsers", [])
-                payload.setdefault("authChallenges", [])
-                payload.setdefault("dispatchChallenges", [])
-                payload.setdefault("authAuditLog", [])
-                payload.setdefault("firebaseOutbox", [])
-                payload.setdefault("fcmOutbox", [])
-                payload.setdefault("auditChain", [])
-                return payload
+                return self._normalize_state(payload)
         except (OSError, ValueError, TypeError):
             pass
         return empty_state()
 
     def _persist(self) -> None:
+        if self._postgres_state_enabled():
+            from ..models import ApiStateDocument
+
+            ApiStateDocument.objects.update_or_create(
+                key="main",
+                defaults={"payload": deepcopy(self._state)},
+            )
+            return
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             temporary = self.path.with_suffix(".tmp")
@@ -565,6 +568,22 @@ class ApiRepository:
             # The in-memory state still serves the request if storage is
             # read-only or ephemeral.
             return
+
+    @staticmethod
+    def _postgres_state_enabled() -> bool:
+        return (
+            os.getenv("SENTRIX_STATE_STORAGE", "").strip().lower() == "postgres"
+            and "migrate" not in sys.argv
+        )
+
+    @staticmethod
+    def _normalize_state(payload: dict[str, Any]) -> dict[str, Any]:
+        state = empty_state()
+        state.update(deepcopy(payload))
+        state["schemaVersion"] = STATE_SCHEMA_VERSION
+        for key, default_value in empty_state().items():
+            state.setdefault(key, deepcopy(default_value))
+        return state
 
 
 def _now() -> str:
