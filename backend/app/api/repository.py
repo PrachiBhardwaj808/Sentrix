@@ -119,6 +119,15 @@ class ApiRepository:
                     return deepcopy(item)
         return None
 
+    def has_camera_path(self, path_name: str) -> bool:
+        from ..services.cameras.relay import sanitize_path_name
+
+        with self._lock:
+            return any(
+                sanitize_path_name(str(camera.get("id") or "")) == path_name
+                for camera in self._state.get("cameras", [])
+            )
+
     def upsert(self, collection: str, item: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
             items = self._state.setdefault(collection, [])
