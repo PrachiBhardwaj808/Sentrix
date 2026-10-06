@@ -61,11 +61,14 @@ before relying on the service.
 
 This stack is not a declaration that every production requirement is done.
 Production API state now bootstraps into PostgreSQL as one JSONB document; the
-old JSON file is used only to seed a new database. The database runs PostGIS,
-but geospatial collections have not yet been normalized into spatial tables
-and indexed geometries, so GIS filtering/analysis is still application-side.
-Managed backups, restore drills, and multi-instance-safe state operations are
-still required.
+old JSON file is used only to seed a new database. Geospatial records are also
+projected into a PostGIS table with a GiST geometry index; the map requests
+viewport-bounded features, and administrators can import validated GeoJSON
+Point/LineString FeatureCollections. The canonical records still live inside
+the JSONB state document, so record-level ownership/history/approval,
+CSV/KML import, routing/forecast analytics, and multi-instance-safe state
+operations remain future work. Managed backups and restore drills are also
+required.
 The backend is deliberately configured for one synchronous Gunicorn worker
 until state storage is made safe for concurrent workers. Login attempts are
 throttled per operator ID in Django's local-memory cache; this is a useful
@@ -73,6 +76,8 @@ brute-force speed bump, not a distributed rate limiter or DDoS control, and its
 counter resets on process restart. Caddy now checks a short-lived HttpOnly
 operator-session cookie for proxied HLS playlists and segments, but this flow
 still needs end-to-end verification with the production Caddy/MediaMTX images
-and browsers (including native HLS). Caddy alone is not a WAF. AI model
-accuracy, real camera connectivity, external SMS delivery, and identity-provider
-configuration must be validated in the target environment.
+and browsers (including native HLS); the live PostGIS database path also has
+not been exercised in this environment because Docker is unavailable. Caddy
+alone is not a WAF. AI model accuracy, real camera connectivity, external SMS
+delivery, and identity-provider configuration must be validated in the target
+environment.
