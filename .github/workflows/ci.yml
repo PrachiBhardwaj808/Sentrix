@@ -20,7 +20,12 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-*.txt
       - name: Install backend dependencies
-        run: python -m pip install -r backend/requirements-web.txt -r backend/requirements-services.txt "numpy>=1.24,<2" "opencv-python-headless>=4.8,<5.0"
+        run: python -m pip install -r backend/requirements-web.txt -r backend/requirements-services.txt "numpy>=1.24,<2" "opencv-python-headless>=4.8,<5.0" ruff pip-audit
+      - name: Lint backend
+        continue-on-error: true
+        run: python -m ruff check backend/app backend/tests
+      - name: Audit backend dependencies
+        run: python -m pip_audit --disable-pip --local || true
       - name: Run backend unit tests
         env:
           DJANGO_DEBUG: "true"
@@ -30,20 +35,35 @@ jobs:
           DJANGO_DEBUG: "true"
         run: python backend/manage.py check
 
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scanning
+        uses: gitleaks/gitleaks-action@v2
+
   frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high || true
+        working-directory: frontend
       - name: Typecheck frontend
         run: npm run typecheck
+        working-directory: frontend
+      - name: Unit tests
+        run: npm test --if-present
         working-directory: frontend
       - name: Build frontend
         run: npm run build
