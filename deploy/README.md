@@ -43,6 +43,23 @@ data disabled. Replace `POSTGRES_PASSWORD` in `deploy/.env` with a unique
 random secret (for example, generate one with `openssl rand -hex 32`). Never
 commit either `.env` file or use the example database password.
 
+If you need to carry existing operational records into production, the local
+`backend/.localdata/api_state.json` is excluded from Git and the container
+image. Transfer it to the production host over a protected channel, keep it
+outside the repository, then migrate and import it before starting the app:
+
+```sh
+docker compose --env-file deploy/.env -f docker-compose.production.yml up -d database cache
+docker compose --env-file deploy/.env -f docker-compose.production.yml run --build --rm backend python manage.py migrate --noinput
+docker compose --env-file deploy/.env -f docker-compose.production.yml run --rm -v /secure/transfer/api_state.json:/run/sentrix-state.json:ro backend python manage.py import_local_state /run/sentrix-state.json
+```
+
+The import refuses to overwrite an existing state document unless `--replace`
+is explicitly supplied. Back up the target database first before using that
+option. The export can include password hashes, camera credentials, and
+personal information; delete the temporary transfer copy after verifying the
+import and retain backups only under the organization's data policy.
+
 After DNS and firewall rules are ready:
 
 ```sh
