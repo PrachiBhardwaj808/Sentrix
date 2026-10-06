@@ -532,3 +532,71 @@ Sentrix incorporates open-source libraries and public frameworks:
 
 ### License
 [MIT License](LICENSE)
+
+---
+
+## 16. Map, Search, and Deployment Supplement (October 2026)
+
+This supplement preserves all sections above and documents the current map workflow.
+
+### Local setup
+
+```bash
+python -m venv backend/venv
+backend/venv/bin/pip install -r backend/requirements-web.txt -r backend/requirements-services.txt
+DJANGO_DEBUG=true backend/venv/bin/python backend/manage.py migrate
+DJANGO_DEBUG=true backend/venv/bin/python backend/manage.py check
+cd frontend && npm install && npm run typecheck && npm run build
+```
+
+### Production setup
+
+- Set `DJANGO_DEBUG=false` with a strong `DJANGO_SECRET_KEY`.
+- Set `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, and `DJANGO_CSRF_TRUSTED_ORIGINS`.
+- Enable `DJANGO_SECURE_SSL_REDIRECT`, secure cookies, and HSTS behind TLS.
+- Use PostGIS (`DJANGO_DB_ENGINE=postgis` plus name/user/password/host) for proximity, zone intersection, and bbox queries.
+- Configure a production tile provider via `NEXT_PUBLIC_MAP_TILE_URL` with attribution and usage limits.
+- Keep `SENTRIX_ENABLE_DEMO_DATA=false` in every deployed environment.
+
+### Login modes
+
+- Password plus Exotel SMS OTP when `AUTH_REQUIRE_2FA=true`.
+- Passkey/Face ID enrollment and verification through WebAuthn.
+- Local preview login remains a development fallback only; provision real operators with guard creation and passkey enrollment before deployment.
+
+### Map workflow
+
+- Search names, landmarks, cameras, alerts, communities, infrastructure, roads, checkpoints, and direct coordinates such as `28.6139, 77.2090`.
+- Live suggestions, recent searches, pan/zoom/highlight, and details panel on selection.
+- Controls: zoom, reset, fullscreen, layers, legend, distance/area measurement, copy-coordinates, browser location with permission-denied fallback, cursor lat/lng, keyboard arrows/plus/minus, and mobile-friendly toolbar.
+- Click any map point to create camera locations, alerts, communities, infrastructure, checkpoints, resources/POIs, roads/routes, and restricted zones/geofences with prefilled coordinates, nearest place, timestamp, and operator.
+- Filters: severity, status, time range, assigned team, sector, source, and record type.
+- Map views are shareable through `?lat=&lng=&zoom=` URL parameters.
+- Viewport loading uses `/api/geospatial?bbox=` with PostGIS; non-PostGIS deployments retain bootstrap features.
+
+### API reference (map)
+
+- `GET /api/map/search?q=&limit=` — local plus configurable remote suggestions.
+- `GET /api/map/nearby?lat=&lng=&radiusKm=&limit=` — nearby cameras, alerts, communities, resources, infrastructure.
+- `GET /api/map/features?recordType=&page=&pageSize=&bbox=&severity=&status=&sector=&source=` — paginated viewport API.
+- `GET /api/geospatial` and `GET /api/geospatial?bbox=` — reference records and PostGIS bbox.
+- `POST /api/geospatial` — admin creation of communities, resources, infrastructure, and roads.
+
+### Mock-data instructions
+
+```bash
+SENTRIX_ENABLE_DEMO_DATA=true DJANGO_DEBUG=true backend/venv/bin/python backend/manage.py seed_demo
+SENTRIX_ENABLE_DEMO_DATA=true DJANGO_DEBUG=true backend/venv/bin/python backend/manage.py clear_demo_data
+```
+
+- Demo data is fictional, local-only, and never enabled by default in production.
+- `seed_demo` requires `SENTRIX_ENABLE_DEMO_DATA=true` and seeds guards, cameras, sectors, alerts, communities, roads, resources, and infrastructure.
+- `clear_demo_data` removes only known demo IDs and fictional records without touching operator-created data.
+
+### Troubleshooting
+
+- `DJANGO_SECRET_KEY must be set when DJANGO_DEBUG=false`: set a long random secret or use `DJANGO_DEBUG=true` locally.
+- `bounding-box queries require the PostGIS deployment`: configure PostGIS or rely on bootstrap features.
+- Geocoder `429`: remote rate limit hit; wait a minute or set `SENTRIX_GEOCODER_PROVIDER=local`.
+- Location permission denied: enable browser location or paste coordinates directly.
+- Push rejected: run `git fetch origin`, resolve the specific error, then retry; never commit `.env`, keys, databases, or recordings.
