@@ -40,6 +40,7 @@ from ..services.notifications.otp import (
     hash_otp,
     verify_otp,
 )
+from ..services.geospatial_import import GeoJsonImportError, parse_feature_collection
 from ..services.cameras.connection import test_camera_url
 from ..services.analytics import CameraRuleEngine
 from ..services.triage.agent import IncidentTriageAgent
@@ -532,11 +533,22 @@ def geospatial(request: HttpRequest) -> JsonResponse:
     payload = _body(request)
     collection = str(payload.get("collection") or "").strip()
     record = payload.get("record")
-    if collection not in _GEOSPATIAL_COLLECTIONS or not isinstance(record, dict):
+    if collection not in _GEOSPATIAL_COLLECTIONS:
         return _error("collection must be one of communities, resources, infrastructure, or roads and record must be an object")
+    if isinstance(payload.get("geojson"), dict):
+        try:
+            records = parse_feature_collection(collection, payload["geojson"])
+        except GeoJsonImportError as exc:
+            return _error(str(exc))
+        imported = repository.upsert_many(collection, records)
+        return JsonResponse({"imported": len(imported), "records": imported}, status=201)
+    if not isinstance(record, dict):
+        return _error("record must be an object")
     record_id = str(record.get("id") or "").strip()
     if not record_id:
         return _error("geospatial records require a stable id")
+    if len(record_id) > 200:
+        return _error("geospatial record ids must be 200 characters or fewer")
     coordinates = record.get("coordinates")
     if collection != "roads" and (not isinstance(coordinates, dict) or not _valid_coordinates(coordinates)):
         return _error("geospatial records require valid coordinates")
