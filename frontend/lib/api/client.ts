@@ -444,6 +444,11 @@ export const backendApi = {
       relayAvailable: boolean;
       error?: string;
     }>(`/cameras/${encodeURIComponent(cameraId)}/stream`),
+  importGeoJson: (collection: "communities" | "resources" | "infrastructure" | "roads", geojson: unknown) =>
+    request<{ imported: number; records: unknown[] }>("/geospatial", {
+      method: "POST",
+      body: JSON.stringify({ collection, geojson }),
+    }),
   systemAction: (action: "lockdown" | "abort_lockdown" | "defcon", level?: number, actorName?: string) =>
     request(`/system/action`, {
       method: "POST",
