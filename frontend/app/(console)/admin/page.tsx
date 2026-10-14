@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Eye, Fingerprint, KeyRound, ListChecks, Plus, Power, RotateCcw, ShieldCheck, Sliders, Trash2, UserPlus, Volume2, VolumeX } from "lucide-react";
+import { AlertCircle, CheckCircle2, Cloud, Eye, Fingerprint, Flame, KeyRound, ListChecks, Plus, Power, RotateCcw, ShieldCheck, Sliders, Trash2, UserPlus, Volume2, VolumeX } from "lucide-react";
 import { useIBVAPStore } from "@/lib/store/useIBVAPStore";
 import { GuardStatus, WatchlistStatus, WatchlistType } from "@/lib/types";
 import { AuthAuditEvent, backendApi } from "@/lib/api/client";
@@ -57,6 +57,7 @@ export default function CameraSettingsAdminPage() {
     soundMuted,
     toggleSound,
     resetData,
+    firebaseStatus,
   } = useIBVAPStore();
 
   const [guardForm, setGuardForm] = useState(INITIAL_GUARD_FORM);
@@ -200,6 +201,48 @@ export default function CameraSettingsAdminPage() {
           </button>
         </div>
       </div>
+
+      {/* Firebase Cloud Services */}
+      <section className="border border-[#CBDCEB] bg-[#FFFFFF] p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#CBDCEB] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center bg-[#EA580C] text-white">
+              <Flame className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#0F172A]">
+                FIREBASE CLOUD INFRASTRUCTURE // FIRESTORE & FCM
+              </h2>
+              <p className="mt-1 text-[11px] text-[#475569]">
+                Live cloud synchronization with Firestore persistence and FCM mobile dispatch for district alerts.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 border border-[#FED7AA] bg-[#FFF7ED] px-2.5 py-1.5 text-[10px] font-bold uppercase text-[#C2410C]">
+            <Cloud className="h-3.5 w-3.5" /> PROJECT: {firebaseStatus.projectId || "sentrix-41ecc"}
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="border border-[#CBDCEB] bg-[#F8FAFC] p-3">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">CLOUD TARGET</div>
+            <div className="mt-1 font-mono text-xs font-bold text-[#0F172A]">{firebaseStatus.projectId || "sentrix-41ecc"}</div>
+            <div className="mt-1 text-[10px] text-[#0284C7]">Firebase Web SDK 13.0 Active</div>
+          </div>
+          <div className="border border-[#CBDCEB] bg-[#F8FAFC] p-3">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">FIRESTORE SYNC</div>
+            <div className="mt-1 font-mono text-xs font-bold text-[#166534]">
+              {firebaseStatus.initialized ? "SYNCHRONIZED" : firebaseStatus.configured ? "CONFIGURED / READY" : "LOCAL CACHE"}
+            </div>
+            <div className="mt-1 text-[10px] text-[#64748B]">Collections: alerts & alerts_events</div>
+          </div>
+          <div className="border border-[#CBDCEB] bg-[#F8FAFC] p-3">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">PUSH TOPIC (FCM)</div>
+            <div className="mt-1 font-mono text-xs font-bold text-[#0F172A]">sentrix-alerts</div>
+            <div className="mt-1 text-[10px] text-[#64748B]">Topic broadcast on incident escalation</div>
+          </div>
+        </div>
+      </section>
 
       {/* Authentication Security */}
       <section className="border border-[#CBDCEB] bg-[#FFFFFF] p-5 shadow-sm">

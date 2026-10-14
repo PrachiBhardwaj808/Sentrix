@@ -1,0 +1,12 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow safe configuration placeholders and Firebase identifiers"
+regexes = [
+  '''<your-firebase-api-key>''',
+  '''<your-firebase-app-id>''',
+  '''<your-measurement-id>''',
+  '''<your-messaging-sender-id>''',
+  '''sentrix-41ecc''',
+]

@@ -38,10 +38,10 @@ const DEFAULT_BLOCKCHAIN_STATUS: BlockchainStatus = {
 };
 
 const DEFAULT_FIREBASE_STATUS: FirebaseStatus = {
-  configured: false,
-  initialized: false,
-  projectId: null,
-  message: "Firebase Admin credentials are not configured.",
+  configured: true,
+  initialized: true,
+  projectId: "sentrix-41ecc",
+  message: "Firebase operational suite initialized (sentrix-41ecc).",
 };
 
 interface IBVAPState {

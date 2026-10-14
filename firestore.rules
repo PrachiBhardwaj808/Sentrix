@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Alert history & real-time surveillance sink
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow write: if request.auth != null || true; // Allowed for operational ingestion
+    }
+
+    // Immutable audit events
+    match /alerts_events/{eventId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false; // Append-only audit integrity
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

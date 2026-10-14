@@ -9,6 +9,7 @@ import {
   LogOut,
   AlertTriangle,
   ShieldCheck,
+  Flame,
   Moon,
   Sun,
   Server,
@@ -32,6 +33,7 @@ export const ConsoleHeader: React.FC = () => {
     offlineLogQueue,
     currentUser,
     blockchainStatus,
+    firebaseStatus,
   } = useIBVAPStore();
 
   const [currentTime, setCurrentTime] = useState<string>("");
@@ -151,6 +153,21 @@ export const ConsoleHeader: React.FC = () => {
         >
           <ShieldCheck className="w-3 h-3 text-[#16A34A]" />
           <span>LEDGER: {blockchainStatus.connected ? "SYNC" : "STANDBY"}</span>
+        </div>
+
+        {/* Firebase Cloud Status */}
+        <div
+          title={firebaseStatus.message || `Firebase: ${firebaseStatus.projectId || "sentrix-41ecc"}`}
+          className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 border text-[10px] font-bold uppercase ${
+            firebaseStatus.initialized
+              ? "bg-[#DCFCE7] text-[#166534] border-[#86EFAC]"
+              : firebaseStatus.configured
+              ? "bg-[#FEF3C7] text-[#92400E] border-[#FCD34D]"
+              : "bg-[#F1F5F9] text-[#64748B] border-[#CBDCEB]"
+          }`}
+        >
+          <Flame className="w-3 h-3 text-[#F97316]" />
+          <span>FIREBASE: {firebaseStatus.initialized ? "SYNC" : firebaseStatus.configured ? "READY" : "OFFLINE"}</span>
         </div>
 
         {/* Offline Queue Badge */}
