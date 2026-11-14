@@ -131,3 +131,4 @@ flowchart TD
 3. **Mandatory Human-in-the-Loop**: AI detections produce candidate flags only; operational action requires human verification.
 4. **Demographic Neutrality**: Models classify objects and geometric attributes only; demographic inference is strictly disallowed.
 5. **Zero-Trust Network Segmentation**: Docker production stack isolates database, cache, and media relay behind internal networks; only Caddy edge proxy publishes host ports 80/443.
+

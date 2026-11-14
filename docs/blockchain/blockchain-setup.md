@@ -21,7 +21,7 @@ Large files remain off-chain:
 - Pinata private IPFS stores the approved encrypted snapshot or clip.
 - The blockchain stores the incident hash, evidence hash, custody events, and high-severity model provenance.
 - The Vercel frontend never holds a private key and does not send transactions directly.
-The contract is [EvidenceRegistry.sol](backend/blockchain/contracts/EvidenceRegistry.sol). It has no edit or delete functions. The Django signer is the only account allowed to append records.
+The contract is [EvidenceRegistry.sol](../../backend/blockchain/contracts/EvidenceRegistry.sol). It has no edit or delete functions. The Django signer is the only account allowed to append records.
 
 ## Choose the network
 

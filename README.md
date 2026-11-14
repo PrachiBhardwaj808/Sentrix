@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/PrachiBhardwaj808/Sentrix/actions/workflows/ci.yml/badge.svg)](https://github.com/PrachiBhardwaj808/Sentrix/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/PrachiBhardwaj808/Sentrix)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 [![Next.js](https://img.shields.io/badge/next.js-14+-black.svg)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL%20%2F%20PostGIS-336791.svg)](https://postgis.net/)
@@ -268,4 +268,4 @@ python manage.py check
 
 ## 12. License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [backend/THIRD_PARTY_NOTICES.md](backend/THIRD_PARTY_NOTICES.md) for third-party library notices and license details.
