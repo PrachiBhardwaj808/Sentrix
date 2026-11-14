@@ -22,14 +22,18 @@ describe("WebSocket State Store Handlers", () => {
 
     const sampleAlert: Alert = {
       id: "ALT-WS-001",
-      cameraName: "North Gate",
-      cameraId: "CAM-01",
+      sourceCameraName: "North Gate",
+      sourceCameraId: "CAM-01",
       sector: "Sector Alpha-1",
       level: "critical",
       eventType: "fence_breach",
       timestamp: "2026-11-14T10:00:00Z",
       status: "open",
       confidence: 97.8,
+      coordinates: { lat: 26.8467, lng: 80.9462 },
+      objectClass: "Person",
+      evidenceUrl: "",
+      acknowledgedBy: null,
     };
 
     // 1. Incoming new alert
@@ -57,11 +61,22 @@ describe("WebSocket State Store Handlers", () => {
       id: "CAM-02",
       name: "Perimeter Camera 2",
       sector: "Sector Beta",
-      type: "optical",
+      type: "fixed",
+      rtspUrl: "rtsp://192.168.1.50:554/live",
       ipAddress: "192.168.1.50",
       status: "online",
       aiActive: true,
+      personDetection: true,
+      vehicleDetection: false,
       confidenceThreshold: 80,
+      minObjectSizePx: 30,
+      zonePolygon: [],
+      triggerAction: "Guard Ping",
+      dwellTimeSeconds: 5,
+      fps: 25,
+      resolution: "1080p",
+      fovAngle: 90,
+      coordinates: { lat: 26.85, lng: 80.95 },
     };
 
     useIBVAPStore.setState({ cameras: [sampleCamera] });
@@ -85,13 +100,18 @@ describe("WebSocket State Store Handlers", () => {
 
     const sampleAlert: Alert = {
       id: "ALT-WS-002",
-      cameraName: "South Post",
-      cameraId: "CAM-03",
+      sourceCameraName: "South Post",
+      sourceCameraId: "CAM-03",
       sector: "Sector Gamma",
       level: "high",
       eventType: "unidentified_vehicle",
       timestamp: "2026-11-14T10:05:00Z",
       status: "open",
+      confidence: 88.5,
+      coordinates: { lat: 26.84, lng: 80.94 },
+      objectClass: "Vehicle",
+      evidenceUrl: "",
+      acknowledgedBy: null,
     };
 
     const sampleGuard: Guard = {
@@ -99,8 +119,18 @@ describe("WebSocket State Store Handlers", () => {
       name: "Constable Kumar",
       rank: "Constable",
       badgeId: "CK-202",
+      photoUrl: "",
+      phone: "+919876543210",
+      emergencyContact: { name: "Sunita Kumar", phone: "+919876543211", relation: "Spouse" },
+      callSign: "EAGLE-2",
+      certifications: ["QRF-1"],
+      bloodGroup: "O+",
       status: "on_post",
+      currentPostId: "P-1",
       currentSector: "Sector Gamma",
+      shiftStart: "06:00",
+      shiftEnd: "14:00",
+      attendanceHistory: [],
     };
 
     useIBVAPStore.setState({ alerts: [sampleAlert], guards: [sampleGuard] });
