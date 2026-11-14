@@ -112,16 +112,18 @@ def register_camera_relay(camera: Mapping[str, Any]) -> dict[str, Any]:
         "source": rtsp_url,
         "sourceOnDemand": True,
         "sourceProtocol": "tcp",
+        "rtspTransport": "tcp",
     }
+    request_timeout = (1.5, 3.5)
 
     try:
         # Try adding the path first
         add_url = f"{api_url}/v3/config/paths/add/{path_name}"
-        resp = requests.post(add_url, json=path_payload, timeout=3.0)
+        resp = requests.post(add_url, json=path_payload, timeout=request_timeout)
         if resp.status_code == 400 and "already exists" in resp.text.lower():
             # If path already exists, update it via patch
             patch_url = f"{api_url}/v3/config/paths/patch/{path_name}"
-            patch_resp = requests.patch(patch_url, json=path_payload, timeout=3.0)
+            patch_resp = requests.patch(patch_url, json=path_payload, timeout=request_timeout)
             patch_resp.raise_for_status()
         elif not resp.ok:
             resp.raise_for_status()
@@ -152,7 +154,7 @@ def remove_camera_relay(camera_id: str) -> bool:
     path_name = sanitize_path_name(camera_id)
     try:
         delete_url = f"{config['api_url']}/v3/config/paths/delete/{path_name}"
-        resp = requests.delete(delete_url, timeout=2.0)
+        resp = requests.delete(delete_url, timeout=(1.0, 2.5))
         return resp.ok
     except Exception:
         return False

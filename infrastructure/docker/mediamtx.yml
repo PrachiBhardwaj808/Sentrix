@@ -11,6 +11,9 @@ hls: yes
 hlsAddress: :8888
 hlsAllowOrigins: ['*']
 hlsVariant: mpegts
+hlsSegmentCount: 3
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
 
 webrtc: yes
 webrtcAddress: :8889
@@ -18,3 +21,10 @@ webrtcAllowOrigins: ['*']
 
 paths:
   all_others:
+    sourceOnDemand: yes
+    sourceOnDemandStartTimeout: 10s
+    sourceOnDemandCloseAfter: 15s
+    sourceProtocol: tcp
+    readTimeout: 10s
+    writeTimeout: 10s
+    readBufferCount: 2048

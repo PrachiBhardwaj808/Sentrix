@@ -397,6 +397,8 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
     if (isHls) {
       destroyHls();
       if (Hls.isSupported()) {
+        let networkRetries = 0;
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: true,
@@ -406,6 +408,7 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
         hls.loadSource(activeSourceUrl);
         hls.attachMedia(videoRef.current);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          networkRetries = 0;
           setError("");
           setCameraState("live");
           void videoRef.current?.play().catch(() => undefined);
@@ -414,11 +417,28 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
-                setError("Camera relay network error: camera or MediaMTX relay may be offline.");
-                hls.startLoad();
+                networkRetries += 1;
+                setError(`Camera relay network error (retry ${networkRetries}): camera or MediaMTX relay may be offline.`);
+                if (networkRetries <= 2) {
+                  try {
+                    hls.startLoad();
+                    return;
+                  } catch {
+                    // Fall through to delayed reload
+                  }
+                }
+                if (!reconnectTimer) {
+                  reconnectTimer = setTimeout(() => {
+                    reconnectTimer = null;
+                    if (hlsRef.current) {
+                      hlsRef.current.loadSource(activeSourceUrl);
+                      hlsRef.current.startLoad();
+                    }
+                  }, 2500);
+                }
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
-                setError("Media decoding error on camera stream.");
+                setError("Media decoding error on camera stream: attempting recovery.");
                 hls.recoverMediaError();
                 break;
               default:
@@ -429,6 +449,11 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
             }
           }
         });
+
+        return () => {
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          destroyHls();
+        };
       } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
         videoRef.current.src = activeSourceUrl;
       }

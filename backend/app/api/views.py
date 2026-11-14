@@ -1589,9 +1589,22 @@ def _issue_otp_challenge(request: HttpRequest, user: dict[str, Any]) -> dict[str
             raise ExotelDeliveryError("This operator has no phone number for Exotel two-step verification.")
         delivery = "exotel_sms"
         message = f"Sentrix login verification code: {otp}. It expires in 5 minutes. Do not share this code."
-        delivery_status = send_sms(phone, message, custom_data=f"login:{operator_id}")
+        try:
+            delivery_status = send_sms(phone, message, custom_data=f"login:{operator_id}")
+            if delivery_status.get("mock"):
+                delivery = "mock_fallback"
+        except (ExotelConfigurationError, ExotelDeliveryError, Exception) as exc:
+            if _allow_demo_otp(request):
+                delivery = "demo"
+                delivery_status = {"status": "demo_fallback", "error": str(exc)}
+            else:
+                raise
     elif not _allow_demo_otp(request):
-        raise ExotelConfigurationError("Two-step verification is enabled but Exotel is not configured.")
+        if config.get("allowMockFallback"):
+            delivery = "mock_fallback"
+            delivery_status = {"status": "mock_delivered", "provider": "exotel_mock_fallback"}
+        else:
+            raise ExotelConfigurationError("Two-step verification is enabled but Exotel is not configured.")
 
     challenge = {
         "id": challenge_id,
@@ -1660,17 +1673,33 @@ def _issue_dispatch_otp(
             )
             try:
                 result = send_sms(phone, message, custom_data=f"dispatch-otp:{alert_id}")
-                provider_status = "sent"
-                delivery = "exotel_sms"
-                provider_message_id = result.get("providerMessageId")
-            except (ExotelConfigurationError, ExotelDeliveryError) as exc:
-                provider_status = "failed"
-                delivery = "failed"
-                sms_error = str(exc)
+                if result.get("mock"):
+                    provider_status = "mock_delivered"
+                    delivery = "mock_fallback"
+                    provider_message_id = result.get("providerMessageId")
+                else:
+                    provider_status = "sent"
+                    delivery = "exotel_sms"
+                    provider_message_id = result.get("providerMessageId")
+            except (ExotelConfigurationError, ExotelDeliveryError, Exception) as exc:
+                if _allow_demo_otp(request):
+                    provider_status = "demo_ready"
+                    delivery = "demo"
+                    demo_otp = otp
+                    sms_error = f"Exotel delivery failed ({exc}); fell back to local OTP."
+                else:
+                    provider_status = "failed"
+                    delivery = "failed"
+                    sms_error = str(exc)
     elif _allow_demo_otp(request):
         provider_status = "demo_ready"
         delivery = "demo"
         demo_otp = otp
+    elif exotel_status().get("allowMockFallback"):
+        provider_status = "mock_delivered"
+        delivery = "mock_fallback"
+        provider_message_id = f"MOCK-DISP-{secrets.token_hex(6).upper()}"
+        sms_error = "Exotel unconfigured; mock dispatch OTP generated."
     else:
         sms_error = "Exotel credentials are not configured and demo OTPs are disabled."
 
@@ -1752,14 +1781,15 @@ def _send_dispatch_sms(alert: dict[str, Any], guard: dict[str, Any]) -> dict[str
     )
     try:
         result = send_sms(phone, body, custom_data=f"dispatch:{alert.get('id')}")
+        status = "mock_delivered" if result.get("mock") else "sent"
         return {
-            "smsStatus": "sent",
+            "smsStatus": status,
             "smsProvider": result.get("provider", "exotel"),
             "smsSentAt": _now(),
             "smsProviderMessageId": result.get("providerMessageId"),
-            "smsError": None,
+            "smsError": result.get("error"),
         }
-    except (ExotelConfigurationError, ExotelDeliveryError) as exc:
+    except (ExotelConfigurationError, ExotelDeliveryError, Exception) as exc:
         return {
             "smsStatus": "failed",
             "smsProvider": "exotel",
