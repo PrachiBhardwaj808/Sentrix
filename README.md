@@ -92,31 +92,36 @@ Sentrix/
 │   │   └── models.py              # Relational models and state persistence
 │   ├── blockchain/contracts/      # EvidenceRegistry.sol smart contract
 │   ├── config/                    # Django configuration (settings, urls, wsgi)
-│   ├── tests/                     # 76 automated unit tests
+│   ├── tests/                     # 76 automated unit tests across 22 test suites
 │   ├── Dockerfile                 # Python 3.12 container definition
 │   ├── requirements-web.txt       # Web framework dependencies
 │   ├── requirements-services.txt  # Cloud and blockchain dependencies
-│   └── requirements-ai.txt        # Deep learning and vision dependencies
+│   ├── requirements-ai.txt        # Deep learning and vision dependencies
+│   └── README.md                  # Backend architecture and local setup guide
 ├── frontend/                      # Next.js 14+ Tactical Command Console
 │   ├── app/                       # App Router pages (alerts, live-feed, map, admin)
 │   ├── components/                # UI components (GIS Leaflet map, video feed, controls)
 │   ├── lib/                       # API clients, auth helpers, types, GIS calculations
-│   └── Dockerfile                 # Multi-stage production container
+│   ├── Dockerfile                 # Multi-stage production container
+│   └── README.md                  # Frontend architecture and UI engineering guide
 ├── infrastructure/                # Deployment and runtime configurations
 │   ├── docker/                    # MediaMTX relay configuration
 │   ├── deployment/                # Caddyfile reverse proxy, production README, env files
-│   └── firebase/                  # Firestore security rules and index definitions
+│   ├── firebase/                  # Firestore security rules and index definitions
+│   └── README.md                  # Infrastructure overview and deployment index
 ├── docs/                          # Comprehensive technical documentation
 │   ├── architecture/              # System architecture and technical design
-│   ├── implementation/            # Implementation notes and technical details
+│   ├── implementation/            # Implementation plans (backend & frontend)
 │   ├── blockchain/                # Smart contract architecture and setup guides
 │   ├── deployment/                # Hardware specifications, Docker setup, and runbooks
 │   ├── feature-documentation/     # Feature workflows and system capabilities (.docx)
 │   ├── reports/                   # Audit reports and production readiness evaluations
-│   └── guides/                    # Getting started and operational onboarding guides
+│   ├── guides/                    # Getting started and operational onboarding guides
+│   └── README.md                  # Documentation catalog and category index
 ├── scripts/                       # Multi-service launcher scripts
 │   ├── start_all.bat              # Windows automated service launcher
-│   └── start_all.sh               # Linux/macOS automated service launcher
+│   ├── start_all.sh               # Linux/macOS automated service launcher
+│   └── README.md                  # Scripts orchestration and usage documentation
 ├── docker-compose.yml             # Development orchestration (MediaMTX, backend, frontend)
 ├── docker-compose.production.yml  # Production stack (Caddy, PostGIS, Redis, backend, frontend)
 ├── firebase.json                  # Firebase deployment configuration
@@ -226,12 +231,15 @@ Detailed technical documentation is organized by domain in the [`docs/`](docs/) 
 
 | Section | Document | Description |
 |---|---|---|
+| **Overview** | [docs/README.md](docs/README.md) | Central technical documentation index and category hub |
 | **Architecture** | [system-architecture.md](docs/architecture/system-architecture.md) | High-level system architecture, intelligence loops, and component specs |
-| **Implementation**| [implementation.md](docs/implementation/implementation.md) | Technical implementation details and engineering design notes |
+| **Implementation**| [implementation.md](docs/implementation/implementation.md) | Technical backend implementation details and engineering design notes |
+| | [frontend-implementation.md](docs/implementation/frontend-implementation.md) | Web platform implementation plan, command console UI, and guard duty module |
 | **Blockchain** | [blockchain-implementation.md](docs/blockchain/blockchain-implementation.md) | Evidence ledger smart contract specification and event schemas |
 | | [blockchain-setup.md](docs/blockchain/blockchain-setup.md) | Local testnet and Web3 deployment setup guide |
 | **Deployment** | [DOCKER.md](docs/deployment/DOCKER.md) | Docker Desktop configuration, volume mounts, and container commands |
 | | [hardware-and-deployment.md](docs/deployment/hardware-and-deployment.md) | Edge compute hardware requirements, camera specs, and topologies |
+| | [infrastructure/README.md](infrastructure/README.md) | Infrastructure directory index and containerization overview |
 | | [infrastructure/deployment/README.md](infrastructure/deployment/README.md) | Production Caddy, UFW firewall, and PostGIS deployment guide |
 | **Reports** | [PRODUCTION_READINESS.md](docs/reports/PRODUCTION_READINESS.md) | Operational audit, production checklist, and boundary analysis |
 | **Guides** | [HOW_TO_RUN.md](docs/guides/HOW_TO_RUN.md) | Step-by-step developer onboarding and runtime troubleshooting |
@@ -244,8 +252,12 @@ Detailed technical documentation is organized by domain in the [`docs/`](docs/) 
 The backend test suite covers all subsystems, including PostGIS spatial operators, nearest-responder dispatch, route recommendations, and camera proxies:
 
 ```bash
+# Run all 76 unit tests from repository root:
+python -m unittest discover -s backend/tests -v
+
+# Or from backend directory:
 cd backend
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -t .. -v
 ```
 
 To run Django system configuration checks:
