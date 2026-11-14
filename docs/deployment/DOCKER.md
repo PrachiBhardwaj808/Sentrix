@@ -33,7 +33,7 @@ and Firebase keys are never copied into the image.
 From the project root:
 
 ```bash
-cd "/Users/akshit/Desktop/SIH /border-surveillance-main"
+cd /path/to/Sentrix
 
 # Create the backend environment file if it does not exist.
 [ -f backend/.env ] || cp backend/.env.example backend/.env

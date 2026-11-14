@@ -8,8 +8,8 @@
 ---
 
 ## Quick Start (Already Configured)
-- **On Windows**: Double-click `START_ALL.bat`
-- **On macOS / Linux**: Run `./start_all.sh`
+- **On Windows**: Run `scripts\start_all.bat`
+- **On macOS / Linux**: Run `./scripts/start_all.sh`
 
 This launches all 3 required background services:
 1. **MediaMTX Relay**: on port 8888 (HLS), 9997 (API), 8554 (RTSP)

@@ -29,19 +29,19 @@ cleanup() {
 trap cleanup SIGINT SIGTERM EXIT
 
 # 1. Start Django Backend (if available)
-if [ -d "$SCRIPT_DIR/backend/venv" ]; then
+if [ -d "$ROOT_DIR/backend/venv" ]; then
   echo "[1/2] Launching Django API backend on http://127.0.0.1:8000 ..."
   (
-    cd "$SCRIPT_DIR/backend"
+    cd "$ROOT_DIR/backend"
     # shellcheck disable=SC1091
     source venv/bin/activate
     python manage.py runserver 127.0.0.1:8000
   ) &
   PIDS+=($!)
-elif command -v python3 &>/dev/null && [ -f "$SCRIPT_DIR/backend/manage.py" ]; then
+elif command -v python3 &>/dev/null && [ -f "$ROOT_DIR/backend/manage.py" ]; then
   echo "[1/2] Launching Django API backend with system python3 on http://127.0.0.1:8000 ..."
   (
-    cd "$SCRIPT_DIR/backend"
+    cd "$ROOT_DIR/backend"
     python3 manage.py runserver 127.0.0.1:8000
   ) &
   PIDS+=($!)
@@ -50,7 +50,7 @@ fi
 # 2. Start Sentrix Next.js Frontend
 echo "[2/2] Launching Sentrix Next.js frontend on http://localhost:3000 ..."
 (
-  cd "$SCRIPT_DIR/frontend"
+  cd "$ROOT_DIR/frontend"
   npm run dev
 ) &
 PIDS+=($!)
@@ -58,8 +58,8 @@ PIDS+=($!)
 echo ""
 echo "===================================================="
 echo "  All Sentrix Services Online!                    "
-echo "  - Sentrix Console:  http://localhost:3000        "
-echo "  - Live Camera Feed:    http://localhost:3000/live-feed  "
+echo "  - Sentrix Console:   http://localhost:3000       "
+echo "  - Live Camera Feed:  http://localhost:3000/live-feed "
 echo "===================================================="
 echo "Press Ctrl+C to terminate all services."
 echo ""

@@ -10,7 +10,7 @@ services:
     expose:
       - "9997" # MediaMTX API, backend-only on the Compose network
     volumes:
-      - ./docker/mediamtx.yml:/mediamtx.yml:ro
+      - ./infrastructure/docker/mediamtx.yml:/mediamtx.yml:ro
 
   backend:
     build:

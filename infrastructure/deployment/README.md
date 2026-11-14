@@ -29,17 +29,17 @@ WAF/DDoS service by itself.
 ## Configure and launch
 
 ```sh
-cp deploy/.env.example deploy/.env
+cp infrastructure/deployment/.env.example infrastructure/deployment/.env
 cp backend/.env.example backend/.env
 ```
 
-Set `SENTRIX_DOMAIN` in `deploy/.env`. In `backend/.env`, generate a unique
+Set `SENTRIX_DOMAIN` in `infrastructure/deployment/.env`. In `backend/.env`, generate a unique
 `DJANGO_SECRET_KEY`, set `DJANGO_DEBUG=false`, and configure the production
 domain for `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`,
 `CORS_ALLOWED_ORIGINS`, `WEBAUTHN_RP_ID`, and `WEBAUTHN_ORIGIN`. Configure
 approved SMS/identity-provider credentials and other required integrations
 using a secret manager where available. Keep demo users, demo OTP, and demo
-data disabled. Replace `POSTGRES_PASSWORD` in `deploy/.env` with a unique
+data disabled. Replace `POSTGRES_PASSWORD` in `infrastructure/deployment/.env` with a unique
 random secret (for example, generate one with `openssl rand -hex 32`). Never
 commit either `.env` file or use the example database password.
 
@@ -49,9 +49,9 @@ image. Transfer it to the production host over a protected channel, keep it
 outside the repository, then migrate and import it before starting the app:
 
 ```sh
-docker compose --env-file deploy/.env -f docker-compose.production.yml up -d database cache
-docker compose --env-file deploy/.env -f docker-compose.production.yml run --build --rm backend python manage.py migrate --noinput
-docker compose --env-file deploy/.env -f docker-compose.production.yml run --rm -v /secure/transfer/api_state.json:/run/sentrix-state.json:ro backend python manage.py import_local_state /run/sentrix-state.json
+docker compose --env-file infrastructure/deployment/.env -f docker-compose.production.yml up -d database cache
+docker compose --env-file infrastructure/deployment/.env -f docker-compose.production.yml run --build --rm backend python manage.py migrate --noinput
+docker compose --env-file infrastructure/deployment/.env -f docker-compose.production.yml run --rm -v /secure/transfer/api_state.json:/run/sentrix-state.json:ro backend python manage.py import_local_state /run/sentrix-state.json
 ```
 
 The import refuses to overwrite an existing state document unless `--replace`
@@ -63,9 +63,9 @@ import and retain backups only under the organization's data policy.
 After DNS and firewall rules are ready:
 
 ```sh
-docker compose --env-file deploy/.env -f docker-compose.production.yml config
-docker compose --env-file deploy/.env -f docker-compose.production.yml up --build -d
-docker compose --env-file deploy/.env -f docker-compose.production.yml logs -f edge backend
+docker compose --env-file infrastructure/deployment/.env -f docker-compose.production.yml config
+docker compose --env-file infrastructure/deployment/.env -f docker-compose.production.yml up --build -d
+docker compose --env-file infrastructure/deployment/.env -f docker-compose.production.yml logs -f edge backend
 ```
 
 Caddy must be able to reach the domain on ports 80 and 443 to provision a

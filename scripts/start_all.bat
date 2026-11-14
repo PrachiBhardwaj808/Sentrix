@@ -4,19 +4,21 @@ echo ====================================================
 echo Starting Sentrix AI GIS Intelligence Platform
 echo ====================================================
 
+set "ROOT_DIR=%~dp0.."
+
 echo [1/3] Launching MediaMTX Relay...
-start "MediaMTX Relay" cmd /k "cd /d %~dp0backend && .localdata\bin\mediamtx.exe config\mediamtx.yml"
+start "MediaMTX Relay" cmd /k "cd /d %ROOT_DIR%\backend && .localdata\bin\mediamtx.exe config\mediamtx.yml"
 
 echo [2/3] Launching Django Backend API...
-start "Django Backend" cmd /k "cd /d %~dp0backend && call venv\Scripts\activate.bat && python manage.py runserver 127.0.0.1:8000"
+start "Django Backend" cmd /k "cd /d %ROOT_DIR%\backend && call venv\Scripts\activate.bat && python manage.py runserver 127.0.0.1:8000"
 
 echo [3/3] Launching Next.js Frontend (Sentrix)...
-start "Next.js Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
+start "Next.js Frontend" cmd /k "cd /d %ROOT_DIR%\frontend && npm run dev"
 
 echo.
 echo ====================================================
 echo All services launched in separate windows!
 echo - Sentrix Command Console: http://localhost:3000
-echo - Live Camera Feed:           http://localhost:3000/live-feed
+echo - Live Camera Feed:        http://localhost:3000/live-feed
 echo ====================================================
 pause
