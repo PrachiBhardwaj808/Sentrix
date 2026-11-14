@@ -1,7 +1,20 @@
+import sys
+from pathlib import Path
+
+# Ensure backend root is on sys.path so app.* resolves in any execution context
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 from django.urls import path
 
-from app.api import views
-from app.api.routes import map as map_routes
+try:
+    from app.api import views
+    from app.api.routes import map as map_routes
+except ImportError:
+    from backend.app.api import views  # type: ignore[no-redef]
+    from backend.app.api.routes import map as map_routes  # type: ignore[no-redef]
+
 
 
 urlpatterns = [

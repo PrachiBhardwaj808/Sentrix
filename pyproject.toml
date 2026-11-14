@@ -12,6 +12,9 @@ line-length = 120
 target-version = ["py312"]
 exclude = "venv|.venv|__pycache__|\\.localdata"
 
+[tool.pyright]
+extraPaths = ["backend"]
+
 [tool.coverage.run]
 source = ["backend/app"]
 omit = ["*/tests/*", "*/venv/*", "*/migrations/*"]
