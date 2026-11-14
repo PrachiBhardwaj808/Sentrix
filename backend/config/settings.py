@@ -37,9 +37,14 @@ CORS_ALLOWED_ORIGINS = [
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 APPEND_SLASH = False
 
-INSTALLED_APPS = ["app.apps.BorderSurveillanceConfig"]
+INSTALLED_APPS = [
+    "daphne",
+    "channels",
+    "app.apps.BorderSurveillanceConfig",
+]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "app.api.middleware.CorsHeadersMiddleware",
@@ -91,6 +96,14 @@ if redis_cache_url:
             "KEY_PREFIX": "sentrix",
         }
     }
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [redis_cache_url],
+            },
+        }
+    }
 else:
     CACHES = {
         "default": {
@@ -98,6 +111,11 @@ else:
             "LOCATION": "sentrix-local-cache",
             "TIMEOUT": 300,
             "OPTIONS": {"MAX_ENTRIES": 1000},
+        }
+    }
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
         }
     }
 

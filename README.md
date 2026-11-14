@@ -43,12 +43,12 @@ Sentrix addresses these challenges by uniting video perception, PostGIS spatial 
 
 | Layer | Technologies |
 |---|---|
-| **Frontend** | Next.js 14+ (App Router), TypeScript, Tailwind CSS, Lucide Icons, Leaflet / GIS Engine |
-| **Backend API** | Django 5.2, Python 3.12, Gunicorn, Psycopg 3, WebAuthn |
+| **Frontend** | Next.js 14+ (App Router), TypeScript, Tailwind CSS, Zustand, Lucide Icons, Leaflet / GIS Engine |
+| **Backend API & WebSockets** | Django 5.2, Django Channels, Daphne ASGI, Python 3.12, Gunicorn, Psycopg 3, WebAuthn |
 | **Spatial Engine** | PostgreSQL 16, PostGIS 3.5, GiST 2D Spatial Indexing, GeoJSON Import/Export |
 | **AI & Inference** | PyTorch (CPU/CUDA), Torchvision, Ultralytics YOLOv8/v11, EasyOCR, DeepSORT |
 | **Streaming Media** | MediaMTX (RTSP ingest, HLS & WebRTC ultra-low-latency playback) |
-| **Cache & State** | Redis 7, In-memory LocMem fallback |
+| **Cache & State** | Redis 7 (Channel Layer & Cache), In-memory ChannelLayer / LocMem fallback |
 | **Integrations** | Web3.py (Solidity contracts), Pinata (IPFS), Google Cloud Firestore & FCM, Exotel SMS |
 | **DevOps & Edge** | Docker, Docker Compose, Caddy 2 (Automated TLS Reverse Proxy), GitHub Actions CI |
 
@@ -61,16 +61,16 @@ Sentrix addresses these challenges by uniting video perception, PostGIS spatial 
           │
           ▼
 [ MediaMTX Relay ] ──(HLS / WebRTC)──► [ Next.js Web Console (Port 3000) ]
-          │                                         │
-    (Video Frames)                            (HTTP / REST)
+          │                                         ▲
+    (Video Frames)                            (WebSocket: /ws/alerts/)
           ▼                                         ▼
-[ AI Inference Pipeline ] ──────────────► [ Django Outpost API (Port 8000) ]
+[ AI Inference Pipeline ] ──────────────► [ Django API & Channels (Port 8000) ]
   • YOLO Person Tracking                            │
   • Indian ANPR / EasyOCR                   ┌───────┴───────┐
   • InsightFace / Haar                      ▼               ▼
                                    [( PostGIS 16 )]   [( Redis 7 )]
-                                   • ST_DWithin       • Session Store
-                                   • ST_Distance      • Cache
+                                   • ST_DWithin       • Channel Layers
+                                   • ST_Distance      • Session Store
                                    • GiST Index
 ```
 
@@ -91,11 +91,11 @@ Sentrix/
 │   │   ├── services/              # Inference, spatial_store, analytics, evidence, audit
 │   │   └── models.py              # Relational models and state persistence
 │   ├── blockchain/contracts/      # EvidenceRegistry.sol smart contract
-│   ├── config/                    # Django configuration (settings, urls, wsgi)
-│   ├── tests/                     # 76 automated unit tests across 22 test suites
+│   ├── config/                    # Django core & ASGI config (settings, urls, wsgi, asgi)
+│   ├── tests/                     # 79 automated unit tests across 23 test suites
 │   ├── Dockerfile                 # Python 3.12 container definition
-│   ├── requirements-web.txt       # Web framework dependencies
-│   ├── requirements-services.txt  # Cloud and blockchain dependencies
+│   ├── requirements-web.txt       # Web framework, Channels, Daphne, and DB dependencies
+│   ├── requirements-services.txt  # Cloud, Redis, and blockchain dependencies
 │   ├── requirements-ai.txt        # Deep learning and vision dependencies
 │   └── README.md                  # Backend architecture and local setup guide
 ├── frontend/                      # Next.js 14+ Tactical Command Console

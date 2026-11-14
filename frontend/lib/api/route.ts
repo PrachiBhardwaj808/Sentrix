@@ -36,3 +36,25 @@ export const apiRouteLabel = (value: string | null) => {
   if (!value || value === DEFAULT_BROWSER_API_BASE_URL) return "LOCAL";
   return value.replace(/^https?:\/\//i, "").replace(/\/api$/, "");
 };
+
+export const getBrowserWebSocketUrl = (endpoint = "/ws/alerts/") => {
+  const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  if (typeof window === "undefined") {
+    return `ws://127.0.0.1:8000${normalizedEndpoint}`;
+  }
+
+  const envWs = process.env.NEXT_PUBLIC_WS_BASE_URL;
+  if (envWs) {
+    return `${envWs.replace(/\/$/, "")}${normalizedEndpoint}`;
+  }
+
+  const apiBase = getBrowserApiBaseUrl();
+  try {
+    const parsed = new URL(apiBase);
+    const wsProto = parsed.protocol === "https:" ? "wss:" : "ws:";
+    return `${wsProto}//${parsed.host}${normalizedEndpoint}`;
+  } catch {
+    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${wsProto}//${window.location.hostname}:8000${normalizedEndpoint}`;
+  }
+};

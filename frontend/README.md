@@ -34,9 +34,9 @@ frontend/
 │   └── video/            # HLS/WebRTC streaming players & local camera test component
 ├── hooks/                # Custom React lifecycle and real-time subscription hooks
 ├── lib/                  # Shared libraries, utilities, and API adapters
-│   ├── api/              # Axios / Fetch HTTP client for Django REST endpoints
+│   ├── api/              # HTTP REST client and real-time WebSocket connection manager (websocket.ts)
 │   ├── geospatial/       # GIS geometry helpers, coordinate converters
-│   ├── store/            # Client-side state management
+│   ├── store/            # Client-side Zustand state store (useIBVAPStore.ts) with live WebSocket listeners
 │   ├── auth.ts           # Tactical session management
 │   ├── evidence.ts       # Hash verification and IPFS receipt parsers
 │   ├── firebase.ts       # Firebase client initialization
@@ -58,6 +58,7 @@ frontend/
 ## Key Features
 
 - **Tactical Command Center**: High-density, high-contrast dark theme engineered for 24/7 command center operations.
+- **Real-Time WebSocket State Sync**: Automatic bi-directional WebSocket listener streaming live alerts, camera status updates, and dispatch events into the active operator console without requiring manual page reloads.
 - **Interactive GIS Sector Map**: Vector map rendering with live responder positions, camera cones of vision, spatial distance buffers, and shortest-path evacuation routing.
 - **Real-Time Video Matrix**: Multi-grid camera feed monitor with low-latency WebRTC and HLS streaming via MediaMTX relay.
 - **Zero Fabrication Guarantee**: The UI displays honest empty states when backend services report no active data, never generating fictitious alerts or synthetic personnel.
@@ -102,3 +103,4 @@ npm run build
 # Start production server
 npm start
 ```
+

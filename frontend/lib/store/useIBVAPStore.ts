@@ -25,6 +25,7 @@ interface UserProfile {
 }
 
 type BackendStatus = "loading" | "online" | "offline";
+export type WebSocketStatus = "connected" | "connecting" | "disconnected" | "error";
 
 const DEFAULT_BLOCKCHAIN_STATUS: BlockchainStatus = {
   configured: false,
@@ -70,6 +71,16 @@ interface IBVAPState {
   lastSyncAt: string | null;
   blockchainStatus: BlockchainStatus;
   firebaseStatus: FirebaseStatus;
+  wsStatus: WebSocketStatus;
+
+  setWsStatus: (status: WebSocketStatus) => void;
+  handleIncomingAlert: (alert: Alert) => void;
+  handleAlertUpdated: (alert: Alert) => void;
+  handleCameraUpdated: (camera: Camera) => void;
+  handleDispatchEvent: (payload: { alert: Alert; guard?: Guard; activity?: ActivityLogEntry }) => void;
+  handleDispatchVerified: (alert: Alert) => void;
+  handleSystemUpdated: (payload: { defconLevel?: 1 | 2 | 3 | 4 | 5; lockdownActive?: boolean }) => void;
+  handleActivityCreated: (activity: ActivityLogEntry) => void;
 
   hydrateFromBackend: () => Promise<void>;
   checkBackendHealth: () => Promise<void>;
@@ -191,6 +202,85 @@ export const useIBVAPStore = create<IBVAPState>((set, get) => {
     lastSyncAt: null,
     blockchainStatus: DEFAULT_BLOCKCHAIN_STATUS,
     firebaseStatus: DEFAULT_FIREBASE_STATUS,
+    wsStatus: "disconnected",
+
+    setWsStatus: (status) => set({ wsStatus: status }),
+
+    handleIncomingAlert: (incomingAlert) => {
+      const exists = get().alerts.some((alert) => alert.id === incomingAlert.id);
+      if (exists) {
+        set((state) => ({
+          alerts: state.alerts.map((alert) =>
+            alert.id === incomingAlert.id ? { ...alert, ...incomingAlert } : alert
+          ),
+        }));
+      } else {
+        tacticalSound.playAlert();
+        set((state) => ({
+          alerts: [incomingAlert, ...state.alerts],
+        }));
+      }
+    },
+
+    handleAlertUpdated: (updatedAlert) => {
+      set((state) => ({
+        alerts: state.alerts.map((alert) =>
+          alert.id === updatedAlert.id ? { ...alert, ...updatedAlert } : alert
+        ),
+      }));
+    },
+
+    handleCameraUpdated: (updatedCamera) => {
+      set((state) => ({
+        cameras: state.cameras.map((camera) =>
+          camera.id === updatedCamera.id ? { ...camera, ...updatedCamera } : camera
+        ),
+      }));
+    },
+
+    handleDispatchEvent: (payload) => {
+      const { alert, guard, activity } = payload;
+      set((state) => ({
+        alerts: state.alerts.map((a) => (a.id === alert.id ? { ...a, ...alert } : a)),
+        guards: guard
+          ? state.guards.map((g) => (g.id === guard.id ? { ...g, ...guard } : g))
+          : state.guards,
+        activityLog: activity
+          ? state.activityLog.some((log) => log.id === activity.id)
+            ? state.activityLog
+            : [activity, ...state.activityLog]
+          : state.activityLog,
+      }));
+    },
+
+    handleDispatchVerified: (verifiedAlert) => {
+      set((state) => ({
+        alerts: state.alerts.map((a) => (a.id === verifiedAlert.id ? { ...a, ...verifiedAlert } : a)),
+      }));
+    },
+
+    handleSystemUpdated: (payload) => {
+      const updates: Partial<IBVAPState> = {};
+      if (payload.defconLevel) {
+        updates.defconLevel = payload.defconLevel;
+      }
+      if (typeof payload.lockdownActive === "boolean") {
+        updates.lockdownActive = payload.lockdownActive;
+        if (payload.lockdownActive) {
+          tacticalSound.playLockdown();
+        }
+      }
+      set(updates);
+    },
+
+    handleActivityCreated: (activity) => {
+      set((state) => {
+        if (state.activityLog.some((item) => item.id === activity.id)) {
+          return state;
+        }
+        return { activityLog: [activity, ...state.activityLog] };
+      });
+    },
 
     hydrateFromBackend: async () => {
       if (get().isHydrating) return;

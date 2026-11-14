@@ -46,6 +46,15 @@ from ..services.analytics import CameraRuleEngine
 from ..services.triage.agent import IncidentTriageAgent
 from ..services.monitoring.metrics import get_metrics_registry
 from ..services.notifications.firebase_fcm import get_status as fcm_status, send_alert_notification
+from ..services.broadcaster import (
+    broadcast_activity_created,
+    broadcast_alert_created,
+    broadcast_alert_updated,
+    broadcast_camera_updated,
+    broadcast_dispatch_event,
+    broadcast_dispatch_verified,
+    broadcast_system_updated,
+)
 
 
 class DispatchOtpRateLimitError(RuntimeError):
@@ -680,6 +689,7 @@ def evaluate_camera_analytics(request: HttpRequest) -> JsonResponse:
             })
         saved = repository.upsert("alerts", alert)
         created.append(saved)
+        broadcast_alert_created(saved)
         firebase_results.append(_save_alert_to_firebase(saved))
     return JsonResponse({"events": events, "alerts": created, "firebase": firebase_results[-1] if firebase_results else firebase_status()})
 
@@ -817,6 +827,8 @@ def dispatch_alert(request: HttpRequest, alert_id: str) -> JsonResponse:
         details=f"Dispatched {guard.get('name')} to {alert.get('eventType', 'incident')} at {alert.get('sector', 'All Sectors')}. Guard verification: {otp_delivery['alertFields'].get('dispatchOtpStatus', 'unknown').upper()}.",
     )
     firebase = _save_alert_to_firebase(updated or alert)
+    broadcast_dispatch_event(updated or alert, guard=guard, activity=log)
+    broadcast_activity_created(log)
     response = {"alert": updated, "activity": log, "firebase": firebase, "dispatchOtp": otp_delivery["client"]}
     if firebase.get("alertsSynced") is False:
         response["error"] = "Alert dispatch was saved locally but could not be updated in Firebase."
@@ -898,6 +910,8 @@ def verify_dispatch_otp(request: HttpRequest, alert_id: str) -> JsonResponse:
         details=f"Guard verification completed for dispatch {alert_id}.",
     )
     firebase = _save_alert_to_firebase(alert)
+    broadcast_dispatch_verified(alert)
+    broadcast_activity_created(log)
     return JsonResponse({"verified": True, "alert": alert, "activity": log, "firebase": firebase})
 
 
@@ -920,6 +934,7 @@ def alerts(request: HttpRequest) -> JsonResponse:
         "acknowledgedBy": payload.get("acknowledgedBy"),
     }
     saved = repository.upsert("alerts", alert)
+    broadcast_alert_created(saved)
     firebase = _save_alert_to_firebase(saved)
     response_status = 503 if firebase.get("alertsSynced") is False else 201
     response = {"alert": saved, "firebase": firebase}
@@ -951,6 +966,7 @@ def alert_action(request: HttpRequest, alert_id: str) -> JsonResponse:
         "resolve": "resolved",
     }[action]
     updated = repository.update("alerts", alert_id, {"status": status, "acknowledgedBy": actor})
+    broadcast_alert_updated(updated or alert, action=action)
     firebase = _save_alert_to_firebase(updated or alert)
     log = _activity(
         actor_id=repository.snapshot()["currentUser"]["badgeId"],
@@ -961,6 +977,7 @@ def alert_action(request: HttpRequest, alert_id: str) -> JsonResponse:
         sector=str(alert.get("sector") or "All Sectors"),
         details=f"{status.title()} alert {alert_id}: {alert.get('eventType', 'incident') }.",
     )
+    broadcast_activity_created(log)
     response_status = 503 if firebase.get("alertsSynced") is False else 200
     response = {"alert": updated, "activity": log, "firebase": firebase}
     if response_status == 503:
@@ -1081,6 +1098,7 @@ def activity(request: HttpRequest) -> JsonResponse:
         entry_id=payload.get("id"),
         timestamp=payload.get("timestamp"),
     )
+    broadcast_activity_created(entry)
     return JsonResponse({"activity": entry}, status=201)
 
 
@@ -1191,7 +1209,9 @@ def camera_detail(request: HttpRequest, camera_id: str) -> JsonResponse:
             register_camera_relay(updated)
         except Exception:
             pass
-    return JsonResponse({"camera": _sanitize_camera(updated or camera)})
+    sanitized = _sanitize_camera(updated or camera)
+    broadcast_camera_updated(sanitized)
+    return JsonResponse({"camera": sanitized})
 
 
 @require_http_methods(["GET"])
@@ -1276,6 +1296,7 @@ def system_action(request: HttpRequest) -> JsonResponse:
     else:
         return _error("unsupported system action")
     system = repository.system_update(changes)
+    broadcast_system_updated(system)
     log = _activity(
         actor_id=str(current["currentUser"]["badgeId"]),
         actor_name=str(session.get("name") or current["currentUser"]["name"]),
@@ -1285,6 +1306,7 @@ def system_action(request: HttpRequest) -> JsonResponse:
         sector="All Sectors",
         details=f"System action {action} applied. DEFCON {system['defconLevel']}.",
     )
+    broadcast_activity_created(log)
     return JsonResponse({"system": system, "activity": log})
 
 

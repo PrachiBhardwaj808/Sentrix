@@ -9,7 +9,10 @@ The **Sentrix Backend** is a high-performance Django outpost service providing g
 ```
 backend/
 ├── app/
-│   ├── api/             # REST API routes and view controllers (alerts, cameras, map, guards, auth, inference)
+│   ├── api/             # REST routes, view controllers, and WebSocket handlers:
+│   │   ├── consumers.py           # Real-time WebSocket consumer for /ws/alerts/
+│   │   ├── routing.py             # Channels WebSocket URL routing
+│   │   └── views.py               # REST API controllers
 │   ├── core/            # App configuration, security throttling, rate limits, cryptographic helpers
 │   ├── db/              # Database connection routers and spatial schema definitions
 │   ├── management/      # Custom Django management commands (e.g. data migrations, setup)
@@ -17,6 +20,7 @@ backend/
 │   ├── models/          # Relational data models (alerts, cameras, guards, evidence)
 │   ├── schemas/         # Data validation schemas and serialization types
 │   ├── services/        # Domain business logic:
+│   │   ├── broadcaster.py         # Asynchronous & synchronous real-time event broadcaster
 │   │   ├── spatial_store.py       # PostGIS spatial operators & Haversine fallback engine
 │   │   ├── location_workspace.py  # Spatial indexing, sector bounding boxes, GIS queries
 │   │   ├── evidence_pipeline.py   # Multi-signature hash sealing & IPFS/Pinata dispatch
@@ -25,10 +29,10 @@ backend/
 │   └── workers/         # Background worker routines and pipeline listeners
 ├── blockchain/
 │   └── contracts/       # Solidity smart contracts (EvidenceRegistry.sol)
-├── config/              # Django core configuration (settings.py, urls.py, wsgi.py, mediamtx.yml)
-├── tests/               # 22 automated test suites covering all services and API endpoints
+├── config/              # Django core configuration (settings.py, urls.py, wsgi.py, asgi.py, mediamtx.yml)
+├── tests/               # 23 automated test suites covering all services, REST APIs, and WebSockets
 ├── manage.py            # Django CLI management entry point
-├── requirements-web.txt      # Core web framework & database dependencies
+├── requirements-web.txt      # Core web framework, Channels, Daphne, and database dependencies
 ├── requirements-services.txt # Redis, Web3, cryptographic, and cloud storage clients
 └── requirements-ai.txt       # Computer vision & deep learning libraries (OpenCV, PyTorch, YOLO)
 ```
@@ -51,6 +55,11 @@ backend/
 - SHA-256 evidence hashing and immutable receipt generation.
 - Dual-dispatch to IPFS (via Pinata) and EVM smart contracts (`EvidenceRegistry.sol`).
 - Cryptographic proof generation ensuring digital evidence is tamper-evident and admissible in court.
+
+### 4. Real-Time WebSocket Telemetry & Alert Stream
+- Native Django Channels & Daphne ASGI WebSocket routing serving `/ws/alerts/`.
+- Instant server-push delivery of live incident alerts, camera status updates, QRF guard dispatches, and DEFCON changes.
+- Dual-mode channel layer: in-memory channel layer for local development and Redis channel layer for production clustering.
 
 ---
 
