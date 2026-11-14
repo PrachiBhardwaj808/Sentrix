@@ -58,6 +58,27 @@ def _haversine_km(a: dict[str, Any], b: dict[str, Any]) -> float:
     return 6371.0 * 2 * math.asin(math.sqrt(h))
 
 
+def _filter_in_memory_bbox(
+    items: list[dict[str, Any]], record_type: str, west: float, south: float, east: float, north: float
+) -> list[dict[str, Any]]:
+    filtered: list[dict[str, Any]] = []
+    for item in items:
+        point = item.get("coordinates")
+        if isinstance(point, dict) and _valid_coordinates(point):
+            if west <= float(point["lng"]) <= east and south <= float(point["lat"]) <= north:
+                filtered.append(item)
+        elif record_type == "roads" and isinstance(item.get("points"), list):
+            if any(
+                isinstance(point, dict)
+                and _valid_coordinates(point)
+                and west <= float(point["lng"]) <= east
+                and south <= float(point["lat"]) <= north
+                for point in item["points"]
+            ):
+                filtered.append(item)
+    return filtered
+
+
 @require_http_methods(["GET"])
 def map_search(request: HttpRequest) -> JsonResponse:
     """Live map suggestions across local collections plus coordinate input."""
@@ -127,6 +148,12 @@ def nearby_assets(request: HttpRequest) -> JsonResponse:
         limit = max(1, min(int(request.GET.get("limit", "8")), 25))
     except (TypeError, ValueError):
         return _error("limit must be an integer")
+
+    from ...services.spatial_store import (
+        _enabled as postgis_enabled,
+        query_nearest_features,
+    )
+
     snapshot = repository.snapshot()
     center = {"lat": lat, "lng": lng}
     grouped: dict[str, list[dict[str, Any]]] = {
@@ -136,7 +163,19 @@ def nearby_assets(request: HttpRequest) -> JsonResponse:
         "resources": [],
         "infrastructure": [],
     }
+
+    spatial_collections = {"communities", "resources", "infrastructure"}
     for collection in grouped:
+        if collection in spatial_collections and postgis_enabled():
+            try:
+                db_results = query_nearest_features(collection, lat, lng, radius_km, limit)
+                if db_results is not None:
+                    grouped[collection] = db_results
+                    continue
+            except Exception:
+                pass
+
+        # In-memory Haversine fallback
         items = snapshot.get(collection, [])
         if not isinstance(items, list):
             continue
@@ -152,6 +191,7 @@ def nearby_assets(request: HttpRequest) -> JsonResponse:
                 scored.append((distance, {**item, "distanceKm": round(distance, 3)}))
         scored.sort(key=lambda entry: entry[0])
         grouped[collection] = [entry[1] for entry in scored[:limit]]
+
     return JsonResponse({"center": center, "radiusKm": radius_km, **grouped})
 
 
@@ -187,26 +227,29 @@ def map_features(request: HttpRequest) -> JsonResponse:
         items = [item for item in items if sector in str(item.get("sector") or "").casefold()]
     if source:
         items = [item for item in items if str(item.get("evidenceSource") or "").casefold() == source]
+
     bbox_parameter = request.GET.get("bbox")
     if bbox_parameter:
         try:
             west, south, east, north = (float(value) for value in bbox_parameter.split(","))
         except (TypeError, ValueError):
             return _error("bbox must be west,south,east,north numeric coordinates")
-        filtered: list[dict[str, Any]] = []
-        for item in items:
-            point = item.get("coordinates")
-            if isinstance(point, dict) and _valid_coordinates(point):
-                if west <= float(point["lng"]) <= east and south <= float(point["lat"]) <= north:
-                    filtered.append(item)
-            elif record_type == "roads" and isinstance(item.get("points"), list):
-                if any(
-                    isinstance(point, dict) and _valid_coordinates(point)
-                    and west <= float(point["lng"]) <= east and south <= float(point["lat"]) <= north
-                    for point in item["points"]
-                ):
-                    filtered.append(item)
-        items = filtered
+
+        from ...services.spatial_store import (
+            SPATIAL_COLLECTIONS,
+            _enabled as postgis_enabled,
+            features_in_bbox,
+        )
+
+        if postgis_enabled() and record_type in SPATIAL_COLLECTIONS:
+            bbox_items = features_in_bbox(south, west, north, east, collection=record_type)
+            if bbox_items is not None and isinstance(bbox_items, list):
+                items = bbox_items
+            else:
+                items = _filter_in_memory_bbox(items, record_type, west, south, east, north)
+        else:
+            items = _filter_in_memory_bbox(items, record_type, west, south, east, north)
+
     total = len(items)
     start = (page - 1) * page_size
     return JsonResponse({
@@ -238,3 +281,60 @@ def location_workspace(request: HttpRequest) -> JsonResponse:
     except (TypeError, ValueError):
         return _error("radiusKm must be numeric")
     return JsonResponse(build_workspace(repository.snapshot(), lat, lng, radius_km))
+
+
+@require_http_methods(["GET"])
+def nearest_responders_view(request: HttpRequest) -> JsonResponse:
+    """Nearest emergency responders and resources to a location using PostGIS or Haversine fallback."""
+    session = _session_from_request(request)
+    if not session:
+        return _error("authenticated operator access is required", 401)
+    try:
+        lat = float(request.GET.get("lat", ""))
+        lng = float(request.GET.get("lng", ""))
+    except (TypeError, ValueError):
+        return _error("lat and lng query parameters are required")
+    if not -90 <= lat <= 90 or not -180 <= lng <= 180:
+        return _error("coordinates are out of range")
+    try:
+        radius_km = float(request.GET.get("radiusKm", "15"))
+    except (TypeError, ValueError):
+        return _error("radiusKm must be numeric")
+    try:
+        limit = max(1, min(int(request.GET.get("limit", "5")), 25))
+    except (TypeError, ValueError):
+        return _error("limit must be an integer")
+
+    from ...services.spatial_store import nearest_responders
+
+    responders = nearest_responders(lat, lng, radius_km, limit, state=repository.snapshot())
+    return JsonResponse({
+        "target": {"lat": lat, "lng": lng},
+        "radiusKm": radius_km,
+        "count": len(responders),
+        "responders": responders,
+    })
+
+
+@require_http_methods(["GET"])
+def route_recommendation_view(request: HttpRequest) -> JsonResponse:
+    """Optimal response corridor recommendation avoiding affected perimeters."""
+    session = _session_from_request(request)
+    if not session:
+        return _error("authenticated operator access is required", 401)
+    try:
+        lat = float(request.GET.get("lat", ""))
+        lng = float(request.GET.get("lng", ""))
+    except (TypeError, ValueError):
+        return _error("lat and lng query parameters are required")
+    if not -90 <= lat <= 90 or not -180 <= lng <= 180:
+        return _error("coordinates are out of range")
+    try:
+        radius_km = float(request.GET.get("radiusKm", "10"))
+    except (TypeError, ValueError):
+        return _error("radiusKm must be numeric")
+
+    from ...services.spatial_store import route_recommendation
+
+    recommendation = route_recommendation(lat, lng, radius_km, state=repository.snapshot())
+    return JsonResponse(recommendation)

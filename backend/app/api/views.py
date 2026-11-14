@@ -519,9 +519,8 @@ def geospatial(request: HttpRequest) -> JsonResponse:
                 return _error("bbox coordinates are out of range or cross the antimeridian")
             from ..services.spatial_store import features_in_bbox
 
-            features = features_in_bbox(south, west, north, east)
-            if features is None:
-                return _error("bounding-box queries require the PostGIS deployment", 503)
+            snapshot = repository.snapshot()
+            features = features_in_bbox(south, west, north, east, state_fallback=snapshot)
             return JsonResponse(features)
         snapshot = repository.snapshot()
         return JsonResponse({collection: snapshot.get(collection, []) for collection in _GEOSPATIAL_COLLECTIONS})
@@ -569,7 +568,14 @@ def geospatial_detail(request: HttpRequest, collection: str, item_id: str) -> Js
     return JsonResponse({"deleted": item_id, "collection": collection})
 
 
-from .routes.map import location_workspace, map_features, map_search, nearby_assets  # noqa: F401  # canonical map endpoints
+from .routes.map import (  # noqa: F401  # canonical map endpoints
+    location_workspace,
+    map_features,
+    map_search,
+    nearby_assets,
+    nearest_responders_view,
+    route_recommendation_view,
+)
 
 
 @require_http_methods(["GET"])

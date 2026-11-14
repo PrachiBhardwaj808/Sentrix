@@ -66,6 +66,39 @@ class MapSearchTests(unittest.TestCase):
     def test_empty_query_returns_no_results(self) -> None:
         self.assertEqual(search_local_collections("  ", _state(), 8), [])
 
+    def test_nearest_responders_view(self) -> None:
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from backend.app.api.routes.map import nearest_responders_view
+        import json
+
+        factory = RequestFactory()
+        req = factory.get("/api/map/nearest-responders?lat=28.6139&lng=77.2090&radiusKm=10&limit=3")
+        with patch("backend.app.api.routes.map._session_from_request", return_value={"operatorId": "OP-1"}):
+            with patch("backend.app.api.routes.map.repository.snapshot", return_value=_state()):
+                res = nearest_responders_view(req)
+                self.assertEqual(res.status_code, 200)
+                data = json.loads(res.content)
+                self.assertIn("target", data)
+                self.assertIn("responders", data)
+
+    def test_route_recommendation_view(self) -> None:
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from backend.app.api.routes.map import route_recommendation_view
+        import json
+
+        factory = RequestFactory()
+        req = factory.get("/api/map/route?lat=28.6139&lng=77.2090&radiusKm=10")
+        with patch("backend.app.api.routes.map._session_from_request", return_value={"operatorId": "OP-1"}):
+            with patch("backend.app.api.routes.map.repository.snapshot", return_value=_state()):
+                res = route_recommendation_view(req)
+                self.assertEqual(res.status_code, 200)
+                data = json.loads(res.content)
+                self.assertIn("route", data)
+                self.assertIn("avoid", data)
+                self.assertIn("reason", data)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,14 +11,17 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from .spatial_store import (
+    _enabled as postgis_enabled,
+    haversine_km as _haversine_km,
+    nearest_responders,
+    query_nearest_features,
+    route_recommendation,
+)
+
 
 def haversine_km(a: dict[str, Any], b: dict[str, Any]) -> float:
-    lat1 = math.radians(float(a["lat"]))
-    lat2 = math.radians(float(b["lat"]))
-    delta_lat = lat2 - lat1
-    delta_lng = math.radians(float(b["lng"]) - float(a["lng"]))
-    h = math.sin(delta_lat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lng / 2) ** 2
-    return 6371.0 * 2 * math.asin(math.sqrt(h))
+    return _haversine_km(float(a["lat"]), float(a["lng"]), float(b["lat"]), float(b["lng"]))
 
 
 def _point_of(item: dict[str, Any]) -> dict[str, float] | None:
@@ -82,13 +85,35 @@ def build_workspace(
     radius_km = max(0.1, min(float(radius_km), 50.0))
     limit = max(1, min(int(limit), 50))
 
+    # Leverage PostGIS spatial operators (ST_DWithin, ST_DistanceSphere) when enabled;
+    # fall back gracefully to Haversine great-circle calculation.
+    if postgis_enabled():
+        try:
+            communities = query_nearest_features("communities", lat, lng, radius_km, limit)
+            if communities is None:
+                communities = _nearby(state.get("communities"), center, radius_km, limit)
+            resources = query_nearest_features("resources", lat, lng, radius_km, limit)
+            if resources is None:
+                resources = _nearby(state.get("resources"), center, radius_km, limit)
+            infrastructure = query_nearest_features("infrastructure", lat, lng, radius_km, limit)
+            if infrastructure is None:
+                infrastructure = _nearby(state.get("infrastructure"), center, radius_km, limit)
+            roads = query_nearest_features("roads", lat, lng, radius_km, limit)
+            if roads is None:
+                roads = _nearby_roads(state.get("roads"), center, radius_km, limit)
+        except Exception:
+            communities = _nearby(state.get("communities"), center, radius_km, limit)
+            resources = _nearby(state.get("resources"), center, radius_km, limit)
+            infrastructure = _nearby(state.get("infrastructure"), center, radius_km, limit)
+            roads = _nearby_roads(state.get("roads"), center, radius_km, limit)
+    else:
+        communities = _nearby(state.get("communities"), center, radius_km, limit)
+        resources = _nearby(state.get("resources"), center, radius_km, limit)
+        infrastructure = _nearby(state.get("infrastructure"), center, radius_km, limit)
+        roads = _nearby_roads(state.get("roads"), center, radius_km, limit)
+
     alerts = _nearby(state.get("alerts"), center, radius_km, limit)
     cameras = _nearby(state.get("cameras"), center, radius_km, limit)
-    communities = _nearby(state.get("communities"), center, radius_km, limit)
-    resources = _nearby(state.get("resources"), center, radius_km, limit)
-    infrastructure = _nearby(state.get("infrastructure"), center, radius_km, limit)
-    roads = _nearby_roads(state.get("roads"), center, radius_km, limit)
-
     guards = [g for g in state.get("guards", []) if isinstance(g, dict) and str(g.get("currentSector") or "")]
     activity = state.get("activityLog", [])
     recent_activity = [a for a in activity if isinstance(a, dict)][:10]
@@ -96,6 +121,9 @@ def build_workspace(
     open_alerts = [a for a in alerts if a.get("status") in ("open", "acknowledged", "escalated")]
     critical = [a for a in alerts if a.get("level") == "critical" and a.get("status") != "resolved"]
     offline_cameras = [c for c in cameras if c.get("status") not in ("online", "active")]
+
+    responders = nearest_responders(lat, lng, radius_km=radius_km, limit=5, state=state)
+    routing = route_recommendation(lat, lng, radius_km=radius_km, state=state)
 
     return {
         "center": center,
@@ -122,4 +150,6 @@ def build_workspace(
         "infrastructure": infrastructure,
         "roads": roads,
         "recentActivity": recent_activity,
+        "nearestResponders": responders,
+        "routeRecommendation": routing,
     }
