@@ -24,11 +24,15 @@ export default function LoginPage() {
   const [demoOtp, setDemoOtp] = useState("");
   const [offlineSession, setOfflineSession] = useState<ReturnType<typeof authenticate> | null>(null);
   const [isPasskeyBusy, setIsPasskeyBusy] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isPasskeySupported, setIsPasskeySupported] = useState(false);
   const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [customApiRoute, setCustomApiRoute] = useState<string | null>(null);
 
   useEffect(() => {
+    setIsMounted(true);
+    setIsPasskeySupported(passkeysSupported());
     setDarkMode(getStoredTheme() === "dark");
     setCustomApiRoute(getStoredApiBaseUrl());
   }, []);
@@ -112,6 +116,7 @@ export default function LoginPage() {
     setError("");
     setIsPasskeyBusy(true);
     try {
+      if (!isPasskeySupported) throw new Error("This browser or device does not support Face ID/passkeys.");
       if (!operatorId.trim()) throw new Error("Enter your operator ID before using Face ID.");
       const optionsResponse = await backendApi.passkeyOptions(operatorId);
       const credential = await getPasskey(optionsResponse.options);
@@ -197,7 +202,12 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => void handlePasskeyLogin()}
-            disabled={isPasskeyBusy || !passkeysSupported()}
+            disabled={!isMounted || isPasskeyBusy || !isPasskeySupported}
+            title={
+              !isMounted || !isPasskeySupported
+                ? "Face ID / Passkey authentication is not supported or initializing"
+                : "Sign in with Face ID / Passkey"
+            }
             className="flex w-full items-center justify-center gap-2 border border-[#0284C7] bg-[#F0F9FF] px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-[#0369A1] hover:bg-[#E0F2FE] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Fingerprint className="h-4 w-4" />
