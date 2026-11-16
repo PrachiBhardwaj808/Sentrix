@@ -44,14 +44,14 @@ interface SentrixIntelligenceMapProps {
 }
 
 const layerLabels: Record<keyof MapLayerVisibility, string> = {
-  incidents: "INCIDENTS",
-  cameras: "CCTV CAMERAS",
-  communities: "COMMUNITIES & HABITATIONS",
+  incidents: "INCIDENTS · REPORTED EVENTS",
+  cameras: "CAMERAS · LOCATIONS",
+  communities: "COMMUNITIES · VULNERABILITY",
   resources: "EMERGENCY RESOURCES",
-  roads: "ROADS & ROUTES",
-  riskZones: "INCIDENT RISK ZONES",
-  vulnerability: "COMMUNITY VULNERABILITY",
-  heatmap: "INCIDENT DENSITY",
+  roads: "ROADS · CONNECTED ROUTES",
+  riskZones: "RISK ZONES",
+  vulnerability: "VULNERABILITY",
+  heatmap: "HEATMAP · HOTSPOTS",
   infrastructure: "CRITICAL INFRASTRUCTURE",
 };
 
@@ -84,7 +84,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   const [workspaceLabel, setWorkspaceLabel] = useState("");
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const mapHandle = useRef<LeafletMapHandle | null>(null);
-  const [report, setReport] = useState<CommunityReportInput>({ category: "suspicious activity", description: "", reporterName: "", coordinates: { lat: 20.5937, lng: 78.9629 }, evidenceUrl: "", attachmentName: "" });
+  const [report, setReport] = useState<CommunityReportInput>({ category: "suspicious activity", description: "", reporterName: "", coordinates: { lat: 28.6139, lng: 77.2090 }, evidenceUrl: "", attachmentName: "" });
   const [reportSent, setReportSent] = useState(false);
   const [canImportGeoJson, setCanImportGeoJson] = useState(false);
   const [geoJsonCollection, setGeoJsonCollection] = useState<"communities" | "resources" | "infrastructure" | "roads">("communities");
@@ -96,7 +96,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   }, []);
 
   const selectedAlert = alerts.find((alert) => alert.id === selectedAlertId) || null;
-  const selectedPoint = selectedAlert?.coordinates || communities[0]?.coordinates || cameras[0]?.coordinates || { lat: 20.5937, lng: 78.9629 };
+  const selectedPoint = selectedAlert?.coordinates || communities[0]?.coordinates || cameras[0]?.coordinates || { lat: 28.6139, lng: 77.2090 };
   const filteredAlerts = useMemo(() => alerts.filter((alert) => {
     if (filters.severity && alert.level !== filters.severity) return false;
     if (filters.status && alert.status !== filters.status) return false;
@@ -212,7 +212,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
       />
 
       <div className="overflow-hidden border border-[#CBDCEB] bg-white shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#CBDCEB] bg-[#F0F6FC] p-3"><span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-[#475569]">INDIA GIS LAYERS</span>{(Object.keys(layerLabels) as Array<keyof MapLayerVisibility>).map((key) => <button key={key} type="button" onClick={() => toggleLayer(key)} className={cn("border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors", layers[key] ? "border-[#0284C7] bg-[#0284C7] text-white" : "border-[#CBDCEB] bg-white text-[#64748B]")}>{layerLabels[key]}</button>)}</div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#CBDCEB] bg-[#F0F6FC] p-3"><span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-[#475569]">DELHI GIS LAYERS</span>{(Object.keys(layerLabels) as Array<keyof MapLayerVisibility>).map((key) => <button key={key} type="button" aria-pressed={layers[key]} onClick={() => toggleLayer(key)} className={cn("border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors", layers[key] ? "border-[#0284C7] bg-[#0284C7] text-white" : "border-[#CBDCEB] bg-white text-[#64748B]")}>{layerLabels[key]} · {layers[key] ? "ON" : "OFF"}</button>)}</div>
         <div className="grid min-h-[610px] grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="relative min-h-[580px] bg-[#0B192C]">
             <SentrixLeafletMap
@@ -250,7 +250,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
                 measureMode={measureMode}
                 locateError={locateError}
                 cursor={cursor}
-                centerLabel={searchFocus ? `${searchFocus.lat.toFixed(5)}, ${searchFocus.lng.toFixed(5)}` : "India overview"}
+                centerLabel={searchFocus ? `${searchFocus.lat.toFixed(5)}, ${searchFocus.lng.toFixed(5)}` : "Delhi overview"}
               />
             </div>
             {(measureResult || nearby) && (

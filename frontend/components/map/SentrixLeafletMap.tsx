@@ -56,7 +56,8 @@ interface SentrixLeafletMapProps {
   onMeasureResult?: (text: string) => void;
 }
 
-const fallbackCenter: L.LatLngExpression = [20.5937, 78.9629];
+const fallbackCenter: L.LatLngExpression = [28.6139, 77.2090];
+const delhiBounds = L.latLngBounds([28.40, 76.84], [28.89, 77.35]);
 const alertColor = (level: Alert["level"]) => level === "critical" ? "#DC2626" : level === "high" ? "#EA580C" : "#D97706";
 const roadColor = (status: RoadRecord["status"]) => status === "affected" ? "#DC2626" : status === "high_risk" ? "#D97706" : "#0284C7";
 const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character] || character));
@@ -133,7 +134,7 @@ const SentrixLeafletMap = forwardRef<LeafletMapHandle, SentrixLeafletMapProps>(f
       params.delete("lng");
       params.delete("zoom");
       window.history.replaceState(null, "", `${window.location.pathname}${params.toString() ? `?${params}` : ""}`);
-      map.setView(fallbackCenter, 5);
+    map.setView(fallbackCenter, 11);
     },
     fullscreen: () => {
       const element = containerRef.current;
@@ -177,12 +178,15 @@ const SentrixLeafletMap = forwardRef<LeafletMapHandle, SentrixLeafletMapProps>(f
     overlayRef.current = L.layerGroup().addTo(map);
     measureRef.current = L.layerGroup().addTo(map);
     if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      map.setView([lat, lng], Number.isFinite(zoom) && zoom >= 3 && zoom <= 19 ? zoom : 12);
+      const requested = L.latLng(lat, lng);
+      map.setView(delhiBounds.contains(requested) ? requested : fallbackCenter, Number.isFinite(zoom) && zoom >= 11 && zoom <= 19 && delhiBounds.contains(requested) ? zoom : 11);
       hasInitialFitRef.current = true;
     } else {
-      map.setView(fallbackCenter, 5);
+      map.setView(fallbackCenter, 11);
     }
     const element = containerRef.current;
+    map.setMaxBounds(delhiBounds.pad(0.08));
+    map.setMinZoom(10);
     element.tabIndex = 0;
     const onKeyDown = (event: KeyboardEvent) => {
       const center = map.getCenter();
@@ -350,7 +354,12 @@ const SentrixLeafletMap = forwardRef<LeafletMapHandle, SentrixLeafletMapProps>(f
       L.circle([community.coordinates.lat, community.coordinates.lng], { radius: Math.max(80, score * 12), color: "#A855F7", fill: false, weight: 2, opacity: 0.75 }).addTo(overlay);
     });
 
-    if (layers.heatmap) effectiveAlerts.forEach((alert) => L.circle([alert.coordinates.lat, alert.coordinates.lng], { radius: 800, color: "#FB923C", fillColor: "#FB923C", fillOpacity: 0.11, stroke: false }).addTo(overlay));
+    if (layers.heatmap) clusterAlerts(effectiveAlerts, Math.min(map.getZoom(), 10)).forEach((cluster) => {
+      const intensity = Math.min(cluster.items.length, 8);
+      L.circle([cluster.lat, cluster.lng], { radius: 350 + intensity * 130, color: "#F97316", fillColor: cluster.items.some((item) => item.level === "critical") ? "#DC2626" : "#F97316", fillOpacity: 0.08 + intensity * 0.025, stroke: false })
+        .bindPopup(`<strong>Incident density</strong><br>${cluster.items.length} incident${cluster.items.length === 1 ? "" : "s"} in this area`)
+        .addTo(overlay);
+    });
 
     if (layers.infrastructure) visibleInfrastructure.forEach((item) => L.circleMarker([item.coordinates.lat, item.coordinates.lng], { radius: 7, color: "#0F172A", fillColor: "#FDE68A", fillOpacity: 1 }).bindPopup(`<strong>${escapeHtml(item.name)}</strong><br>${escapeHtml(item.type)} · ${escapeHtml(item.criticality)} criticality`).addTo(overlay));
     if (layers.cameras) cameras.forEach((camera) => L.circleMarker([camera.coordinates.lat, camera.coordinates.lng], { radius: 8, color: "#38BDF8", fillColor: "#0F172A", fillOpacity: 1 }).bindPopup(`<strong>${escapeHtml(camera.name || camera.id)}</strong><br>${escapeHtml(camera.status)} · ${camera.aiActive ? "AI active" : "AI inactive"}`).addTo(overlay));
