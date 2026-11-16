@@ -61,10 +61,14 @@ const DEMO_DELHI = { lat: 28.6139, lng: 77.2090 };
 const demoAlerts: Alert[] = [
   { id: "DEMO-DELHI-01", level: "high", timestamp: new Date().toISOString(), sourceCameraId: "DEMO-CCTV-01", sourceCameraName: "Connaught Place Demo Camera", eventType: "Person detected — demo", confidence: 87, coordinates: { lat: 28.6315, lng: 77.2167 }, objectClass: "Person", evidenceUrl: "", status: "open", acknowledgedBy: null, sector: "New Delhi", notes: "Sample map record. Not a live incident.", evidenceSource: "demo" },
   { id: "DEMO-DELHI-02", level: "medium", timestamp: new Date().toISOString(), sourceCameraId: "DEMO-CCTV-02", sourceCameraName: "India Gate Demo Camera", eventType: "Community report — demo", confidence: 74, coordinates: { lat: 28.6129, lng: 77.2295 }, objectClass: "Unknown", evidenceUrl: "", status: "open", acknowledgedBy: null, sector: "Central Delhi", notes: "Sample map record. Not a live incident.", evidenceSource: "demo" },
+  ...([
+    ["Kashmere Gate", 28.6675, 77.2280, "critical"], ["Karol Bagh", 28.6514, 77.1907, "high"], ["Paharganj", 28.6442, 77.2166, "medium"], ["Lodhi Garden", 28.5931, 77.2197, "high"], ["Hauz Khas", 28.5494, 77.2001, "medium"], ["Saket", 28.5245, 77.2066, "high"], ["Lajpat Nagar", 28.5677, 77.2433, "medium"], ["Akshardham", 28.6127, 77.2773, "critical"], ["Rajouri Garden", 28.6421, 77.1167, "high"], ["Dwarka Sector 10", 28.5816, 77.0581, "medium"], ["Red Fort", 28.6562, 77.2410, "high"], ["Nehru Place", 28.5491, 77.2533, "medium"],
+  ] as [string, number, number, string][]).map(([name, lat, lng, level], index) => ({ id: `DEMO-DELHI-${String(index + 3).padStart(2, "0")}`, level: level as Alert["level"], timestamp: new Date().toISOString(), sourceCameraId: `DEMO-CCTV-${index + 3}`, sourceCameraName: `${name} Demo Camera`, eventType: `Demo incident · ${name}`, confidence: 68 + index, coordinates: { lat, lng }, objectClass: "Person" as const, evidenceUrl: "", status: "open" as const, acknowledgedBy: null, sector: name, notes: "Sample map record. Not a live incident.", evidenceSource: "demo" as const })),
 ];
 const demoCommunities: CommunityRecord[] = [
   { id: "DEMO-COMM-01", name: "Demo Community · Connaught Place", population: 12000, coordinates: { lat: 28.635, lng: 77.21 }, accessScore: 72, emergencyDistanceKm: 1.2 },
   { id: "DEMO-COMM-02", name: "Demo Community · India Gate", population: 18500, coordinates: { lat: 28.608, lng: 77.225 }, accessScore: 61, emergencyDistanceKm: 2.1 },
+  ...[["Kashmere Gate", 28.667, 77.228], ["Karol Bagh", 28.651, 77.191], ["Lodhi Garden", 28.593, 77.22], ["Hauz Khas", 28.549, 77.2], ["Saket", 28.524, 77.207], ["Lajpat Nagar", 28.568, 77.243], ["Dwarka", 28.582, 77.058], ["Rajouri Garden", 28.642, 77.117]].map(([name, lat, lng], i) => ({ id: `DEMO-COMM-${String(i + 3).padStart(2, "0")}`, name: `Demo Community · ${name}`, population: 8000 + i * 2300, coordinates: { lat: Number(lat), lng: Number(lng) }, accessScore: 55 + (i % 4) * 9, emergencyDistanceKm: 1 + (i % 3) }))
 ];
 
 export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
@@ -104,7 +108,6 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
     setCanImportGeoJson(getAuthSession()?.tier === "admin");
   }, []);
 
-  const selectedAlert = alerts.find((alert) => alert.id === selectedAlertId) || null;
   const mapAlerts = alerts.length ? alerts : demoAlerts;
   const mapCommunities = communities.length ? communities : demoCommunities;
   const mapResources = resources.length ? resources : [
@@ -115,8 +118,11 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
     { id: "DEMO-INFRA-01", name: "Demo Critical Site · Central Secretariat", type: "school" as const, coordinates: { lat: 28.614, lng: 77.212 }, criticality: "high" as const },
   ];
   const mapRoads = roads.length ? roads : [{ id: "DEMO-ROAD-01", name: "Demo Central Delhi Route", points: [{ lat: 28.635, lng: 77.209 }, { lat: 28.625, lng: 77.217 }, { lat: 28.613, lng: 77.229 }], status: "open" as const }];
-  const selectedPoint = selectedAlert?.coordinates || communities[0]?.coordinates || cameras[0]?.coordinates || { lat: 28.6139, lng: 77.2090 };
-  const filteredAlerts = useMemo(() => alerts.filter((alert) => {
+  const mapCameras = cameras.length ? cameras : [{ id: "DEMO-CCTV-01", name: "Demo CCTV · Connaught Place", sector: "New Delhi", rtspUrl: "", type: "fixed" as const, aiActive: true, personDetection: true, vehicleDetection: true, coordinates: { lat: 28.632, lng: 77.214 }, status: "online" } as Camera];
+  const selectedAlert = mapAlerts.find((alert) => alert.id === selectedAlertId) || mapAlerts[0] || null;
+  const mapSectors = sectors.length ? sectors : [{ id: "DEMO-SECTOR-CENTRAL", code: "ND-01", name: "Central Delhi", postsCount: 0, staffedCount: 0, threatLevel: "elevated" as const, centerCoordinates: DEMO_DELHI, polygon: [], posts: [], tripwires: [] }];
+  const selectedPoint = selectedAlert?.coordinates || mapCommunities[0]?.coordinates || mapCameras[0]?.coordinates || DEMO_DELHI;
+  const filteredAlerts = useMemo(() => mapAlerts.filter((alert) => {
     if (filters.severity && alert.level !== filters.severity) return false;
     if (filters.status && alert.status !== filters.status) return false;
     if (filters.sector && !alert.sector.toLowerCase().includes(filters.sector.toLowerCase())) return false;
@@ -128,26 +134,26 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
     }
     if (filters.recordType && filters.recordType !== "alert") return false;
     return true;
-  }), [alerts, filters]);
-  const visibleAlertsForInspector = filters.severity || filters.status || filters.sector || filters.source || filters.team || filters.timeRangeHours || filters.recordType ? filteredAlerts : alerts;
-  const selectedResources = useMemo(() => nearestResources(selectedPoint, resources), [selectedPoint, resources]);
-  const selectedCommunities = useMemo(() => communitiesNear(selectedPoint, communities), [selectedPoint, communities]);
-  const selectedInfrastructure = useMemo(() => infrastructureNear(selectedPoint, infrastructure), [selectedPoint, infrastructure]);
-  const selectedCorrelations = selectedAlert ? correlatedAlertIds(selectedAlert, alerts) : [];
-  const selectedRoute = routeRecommendation(selectedPoint, alerts, roads);
-  const overallRiskScore = Math.max(0, ...sectors.map((sector) => riskScoreForArea(sector.centerCoordinates, alerts, cameras)));
+  }), [mapAlerts, filters]);
+  const visibleAlertsForInspector = filters.severity || filters.status || filters.sector || filters.source || filters.team || filters.timeRangeHours || filters.recordType ? filteredAlerts : mapAlerts;
+  const selectedResources = useMemo(() => nearestResources(selectedPoint, mapResources), [selectedPoint, mapResources]);
+  const selectedCommunities = useMemo(() => communitiesNear(selectedPoint, mapCommunities), [selectedPoint, mapCommunities]);
+  const selectedInfrastructure = useMemo(() => infrastructureNear(selectedPoint, mapInfrastructure), [selectedPoint, mapInfrastructure]);
+  const selectedCorrelations = selectedAlert ? correlatedAlertIds(selectedAlert, mapAlerts) : [];
+  const selectedRoute = routeRecommendation(selectedPoint, mapAlerts, mapRoads);
+  const overallRiskScore = Math.max(0, ...mapSectors.map((sector) => riskScoreForArea(sector.centerCoordinates, mapAlerts, mapCameras)));
   const overallRiskBand = riskBandForScore(overallRiskScore);
   const toggleLayer = (key: keyof MapLayerVisibility) => setLayers((current) => ({ ...current, [key]: !current[key] }));
   const layerCounts: Record<keyof MapLayerVisibility, number> = {
-    incidents: alerts.length,
-    cameras: cameras.length,
-    communities: communities.length,
-    resources: resources.length,
-    roads: roads.length,
-    riskZones: communities.length,
-    vulnerability: communities.length,
-    heatmap: alerts.length,
-    infrastructure: infrastructure.length,
+    incidents: mapAlerts.length,
+    cameras: cameras.length || 1,
+    communities: mapCommunities.length,
+    resources: mapResources.length,
+    roads: mapRoads.length,
+    riskZones: mapCommunities.length,
+    vulnerability: mapCommunities.length,
+    heatmap: mapAlerts.length,
+    infrastructure: mapInfrastructure.length,
   };
 
   const loadWorkspace = (lat: number, lng: number, label: string) => {
@@ -220,7 +226,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
     <div className={cn("space-y-4 font-mono", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3 border border-[#CBDCEB] bg-white p-4 shadow-sm">
         <div><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><MapPinned className="h-4 w-4 text-[#0284C7]" /> SENTRIX INTERACTIVE GIS</div><p className="mt-1 text-[11px] font-sans text-[#475569]">Live backend-owned incidents, cameras, response resources, community impact and infrastructure layers.</p></div>
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase"><span className="border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-1 text-[#475569]">{alerts.length} EVENTS</span><span className={cn("border px-2 py-1", overallRiskBand === "HIGH" ? "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" : overallRiskBand === "MEDIUM" ? "border-[#FCD34D] bg-[#FFFBEB] text-[#92400E]" : "border-[#86EFAC] bg-[#F0FDF4] text-[#166534]")}>{overallRiskBand} RISK // {overallRiskScore}</span></div>
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase"><span className="border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-1 text-[#475569]">{mapAlerts.length} EVENTS{alerts.length ? "" : " · DEMO"}</span><span className={cn("border px-2 py-1", overallRiskBand === "HIGH" ? "border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]" : overallRiskBand === "MEDIUM" ? "border-[#FCD34D] bg-[#FFFBEB] text-[#92400E]" : "border-[#86EFAC] bg-[#F0FDF4] text-[#166534]")}>{overallRiskBand} RISK // {overallRiskScore}</span></div>
       </div>
 
       {canImportGeoJson && <section className="flex flex-wrap items-end gap-3 border border-[#CBDCEB] bg-white p-3 shadow-sm" aria-label="Administrator GeoJSON import">
@@ -237,8 +243,8 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
       <MapFilters
         value={filters}
         onChange={setFilters}
-        sectors={Array.from(new Set(alerts.map((alert) => alert.sector).filter(Boolean)))}
-        teams={Array.from(new Set(alerts.map((alert) => alert.assignedGuardName || "").filter(Boolean)))}
+        sectors={Array.from(new Set(mapAlerts.map((alert) => alert.sector).filter(Boolean)))}
+        teams={Array.from(new Set(mapAlerts.map((alert) => alert.assignedGuardName || "").filter(Boolean)))}
       />
 
       <div className="overflow-hidden border border-[#CBDCEB] bg-white shadow-sm">
@@ -253,7 +259,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
             <SentrixLeafletMap
               ref={mapHandle}
               sectors={sectors}
-              cameras={cameras.length ? cameras : [{ id: "DEMO-CCTV-01", name: "Demo CCTV · Connaught Place", sector: "New Delhi", rtspUrl: "", type: "fixed", aiActive: true, personDetection: true, vehicleDetection: true, coordinates: { lat: 28.632, lng: 77.214 }, status: "online" } as Camera]}
+              cameras={mapCameras}
               alerts={mapAlerts}
               communities={mapCommunities}
               resources={mapResources}
@@ -295,14 +301,11 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
                 <div className="mt-1">Click any map point to draft a camera, alert, community, checkpoint, resource, road, or zone record.</div>
               </div>
             )}
-            <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-2 border border-[#38BDF8]/40 bg-[#0F172A]/90 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#BAE6FD]">
-              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#DC2626]" />CRITICAL</span>
-              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#EA580C]" />HIGH</span>
-              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#D97706]" />MEDIUM</span>
-              <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#A855F7]" />COMMUNITY</span>
-              <span><i className="mr-1 inline-block h-2 w-2 rotate-45 bg-[#34D399]" />RESOURCE</span>
-              <span><i className="mr-1 inline-block h-2 w-2 bg-[#FDE68A]" />INFRASTRUCTURE</span>
-              <span>Filtered {visibleAlertsForInspector.length}/{alerts.length}</span>
+            <div className="pointer-events-none absolute bottom-3 left-3 z-[500] max-h-[34%] max-w-[min(620px,calc(100%-24px))] overflow-y-auto border border-[#38BDF8]/50 bg-[#0F172A]/95 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#BAE6FD] shadow-lg sm:max-h-[25%]">
+              <div className="mb-1 text-white">MAP LEGEND · DEMO RECORDS</div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3">
+                <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#DC2626]" />Critical incident / high risk</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#EA580C]" />High incident / hotspot</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#D97706]" />Medium incident / hotspot</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#A855F7]" />Community / vulnerability</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#38BDF8]" />CCTV camera</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[#34D399]" />Available response resource</span><span><i className="mr-1 inline-block h-2 w-2 bg-[#FDE68A]" />Critical infrastructure</span><span><i className="mr-1 inline-block h-0.5 w-3 bg-[#0284C7]" />Open road / route</span><span><i className="mr-1 inline-block h-0.5 w-3 bg-[#DC2626]" />Affected road</span><span><i className="mr-1 inline-block h-0.5 w-3 bg-[#D97706]" />High-risk road</span>
+              </div>
             </div>
           </div>
 
@@ -324,7 +327,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
               <div className="border border-[#CBDCEB] bg-[#F8FBFE] p-3"><div className="flex items-start justify-between gap-2"><div><div className="text-[10px] font-bold uppercase text-[#64748B]">SELECTED INCIDENT</div><div className="mt-1 text-sm font-bold text-[#0F172A]">{selectedAlert.eventType}</div></div><button type="button" onClick={() => setSelectedAlertId(null)} className="text-[#64748B]" aria-label="Close incident inspector"><X className="h-4 w-4" /></button></div><div className="mt-3 grid grid-cols-2 gap-2 text-[10px]"><div><span className="block text-[#64748B]">SOURCE</span><strong>{selectedAlert.evidenceSource === "community_report" ? "COMMUNITY" : "AI / CAMERA"}</strong></div><div><span className="block text-[#64748B]">SEVERITY</span><strong className={selectedAlert.level === "critical" ? "text-[#DC2626]" : "text-[#D97706]"}>{selectedAlert.level.toUpperCase()}</strong></div><div><span className="block text-[#64748B]">LOCATION</span><strong>{selectedAlert.coordinates.lat.toFixed(4)}, {selectedAlert.coordinates.lng.toFixed(4)}</strong></div><div><span className="block text-[#64748B]">CORRELATED</span><strong>{selectedCorrelations.length} SOURCE LINK{selectedCorrelations.length === 1 ? "" : "S"}</strong></div></div></div>
               <div><div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#475569]"><Route className="h-3.5 w-3.5 text-[#0284C7]" /> RESPONSE RECOMMENDATION</div><div className="border border-[#BAE6FD] bg-[#F0F9FF] p-3 text-[10px] text-[#075985]"><strong className="block">{selectedRoute.route}</strong><span className="mt-1 block">Avoid: {selectedRoute.avoid}</span><span className="mt-1 block">{selectedRoute.reason}</span></div></div>
               <div><div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#475569]">NEAREST RESOURCES</div><div className="space-y-1.5">{selectedResources.length ? selectedResources.map((resource) => { const Icon = resourceIcon(resource.type); return <div key={resource.id} className="flex items-center justify-between border border-[#CBDCEB] px-2 py-2 text-[10px]"><span className="flex items-center gap-2"><Icon className="h-3.5 w-3.5 text-[#0284C7]" />{resource.name}</span><strong className={resource.available ? "text-[#166534]" : "text-[#64748B]"}>{resource.distanceKm.toFixed(1)} KM // {resource.available ? `${resource.capacity} READY` : "BUSY"}</strong></div>; }) : <span className="text-[10px] text-[#64748B]">No response resources are configured near this incident.</span>}</div></div>
-              <div><div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#475569]">COMMUNITY IMPACT</div><div className="grid grid-cols-2 gap-2">{selectedCommunities.length ? selectedCommunities.map((community) => { const score = communityVulnerability(community, alerts, cameras); return <div key={community.id} className="border border-[#CBDCEB] bg-[#F8FBFE] p-2 text-[10px]"><strong className="block truncate text-[#0F172A]">{community.name}</strong><span className="mt-1 block text-[#64748B]">{community.population.toLocaleString()} people</span><span className={cn("mt-1 block font-bold", scoreTone(score))}>VULNERABILITY {score}</span></div>; }) : <div className="col-span-2 text-[10px] text-[#64748B]">No community is configured within the current 4 km impact radius.</div>}</div></div>
+              <div><div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#475569]">COMMUNITY IMPACT</div><div className="grid grid-cols-2 gap-2">{selectedCommunities.length ? selectedCommunities.map((community) => { const score = communityVulnerability(community, mapAlerts, mapCameras); return <div key={community.id} className="border border-[#CBDCEB] bg-[#F8FBFE] p-2 text-[10px]"><strong className="block truncate text-[#0F172A]">{community.name}</strong><span className="mt-1 block text-[#64748B]">{community.population.toLocaleString()} people</span><span className={cn("mt-1 block font-bold", scoreTone(score))}>VULNERABILITY {score}</span></div>; }) : <div className="col-span-2 text-[10px] text-[#64748B]">No community is configured within the current 4 km impact radius.</div>}</div></div>
               <div><div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#475569]">CRITICAL INFRASTRUCTURE</div><div className="space-y-1 text-[10px]">{selectedInfrastructure.length ? selectedInfrastructure.map((item) => <div key={item.id} className="flex items-center justify-between border-b border-[#E2E8F0] py-1"><span className="flex items-center gap-1.5"><Building2 className="h-3 w-3 text-[#D97706]" />{item.name}</span><span className="uppercase text-[#64748B]">{item.criticality}</span></div>) : <span className="text-[#64748B]">No infrastructure records are configured near this incident.</span>}</div></div>
               {onAcknowledgeAlert && selectedAlert.status === "open" && <button type="button" onClick={() => onAcknowledgeAlert(selectedAlert.id)} className="flex w-full items-center justify-center gap-2 bg-[#0284C7] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-[#0369A1]"><CheckCircle2 className="h-3.5 w-3.5" /> ACKNOWLEDGE AND REVIEW</button>}
             </> : <div className="py-10 text-center text-[10px] text-[#64748B]">Select an incident on the map to inspect risk, impact, resources and route guidance.</div>}
@@ -334,7 +337,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_.85fr]">
         <section className="border border-[#CBDCEB] bg-white p-4"><div className="mb-3 flex items-center justify-between border-b border-[#CBDCEB] pb-2"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><Users className="h-4 w-4 text-[#A855F7]" /> COMMUNITY INCIDENT REPORTING</div><span className="text-[10px] text-[#64748B]">TWO-WAY GROUND TRUTH</span></div><form onSubmit={submitReport} className="grid grid-cols-1 gap-3 md:grid-cols-2"><label className="text-[10px] font-bold uppercase text-[#475569]">Reporter name<input required value={report.reporterName} onChange={(event) => setReport((current) => ({ ...current, reporterName: event.target.value }))} className="mt-1 w-full border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-2 text-xs font-normal normal-case" placeholder="Name or field worker ID" /></label><label className="text-[10px] font-bold uppercase text-[#475569]">Incident category<select value={report.category} onChange={(event) => setReport((current) => ({ ...current, category: event.target.value }))} className="mt-1 w-full border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-2 text-xs font-normal"><option>suspicious activity</option><option>accident</option><option>fire</option><option>flood</option><option>missing person</option></select></label><label className="text-[10px] font-bold uppercase text-[#475569] md:col-span-2">Description<textarea required value={report.description} onChange={(event) => setReport((current) => ({ ...current, description: event.target.value }))} className="mt-1 min-h-20 w-full border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-2 text-xs font-normal normal-case" placeholder="Describe what happened, who may be affected, and any immediate access issue." /></label><label className="text-[10px] font-bold uppercase text-[#475569] md:col-span-2">Optional image or video<input type="file" accept="image/*,video/*" onChange={(event) => { const file = event.target.files?.[0]; if (!file || file.size > 2 * 1024 * 1024) return; const reader = new FileReader(); reader.onload = () => setReport((current) => ({ ...current, evidenceUrl: String(reader.result || ""), attachmentName: file.name })); reader.readAsDataURL(file); }} className="mt-1 block w-full border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-2 text-xs font-normal" />{report.attachmentName && <span className="mt-1 block normal-case text-[#166534]">Attached: {report.attachmentName}</span>}</label><div className="flex flex-wrap items-end gap-2 md:col-span-2"><label className="text-[10px] font-bold uppercase text-[#475569]">Latitude<input type="number" step="0.0001" value={report.coordinates.lat} onChange={(event) => setReport((current) => ({ ...current, coordinates: { ...current.coordinates, lat: Number(event.target.value) } }))} className="mt-1 block w-32 border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-2 text-xs font-normal" /></label><label className="text-[10px] font-bold uppercase text-[#475569]">Longitude<input type="number" step="0.0001" value={report.coordinates.lng} onChange={(event) => setReport((current) => ({ ...current, coordinates: { ...current.coordinates, lng: Number(event.target.value) } }))} className="mt-1 block w-32 border border-[#CBDCEB] bg-[#F8FBFE] px-2 py-2 text-xs font-normal" /></label><button type="submit" className="flex items-center gap-2 bg-[#A855F7] px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-[#7E22CE]"><Send className="h-3.5 w-3.5" /> SUBMIT GEOREPORT</button>{reportSent && <span className="text-[10px] font-bold text-[#166534]">REPORT ADDED TO THE INCIDENT STREAM FOR OPERATOR REVIEW.</span>}</div></form></section>
-        <section className="border border-[#CBDCEB] bg-white p-4"><div className="mb-3 flex items-center justify-between border-b border-[#CBDCEB] pb-2"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><ShieldAlert className="h-4 w-4 text-[#DC2626]" /> RISK AND VULNERABILITY REGISTER</div><span className="text-[10px] text-[#64748B]">EXPLAINABLE MODEL</span></div><div className="space-y-2">{communities.length ? communities.map((community) => { const risk = riskScoreForArea(community.coordinates, alerts, cameras); const vulnerability = communityVulnerability(community, alerts, cameras); return <div key={community.id} className="border border-[#CBDCEB] bg-[#F8FBFE] p-2.5"><div className="flex items-center justify-between gap-2 text-[10px] font-bold"><span className="truncate text-[#0F172A]">{community.name}</span><span className={scoreTone(Math.max(risk, vulnerability))}>{riskBandForScore(risk)} // RISK {risk}</span></div><div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-[#64748B]"><span>Population <strong className="text-[#0F172A]">{community.population.toLocaleString()}</strong></span><span>Vulnerability <strong className="text-[#A855F7]">{vulnerability}/100</strong></span></div><div className="mt-2 h-1.5 bg-[#E0ECF8]"><div className={cn("h-full", risk >= 70 ? "bg-[#DC2626]" : risk >= 38 ? "bg-[#D97706]" : "bg-[#16A34A]")} style={{ width: `${Math.max(risk, 10)}%` }} /></div></div>; }) : <div className="border border-dashed border-[#CBDCEB] p-4 text-[10px] text-[#64748B]">No community reference records are configured. Add verified geography records to enable impact scoring.</div>}</div></section>
+        <section className="border border-[#CBDCEB] bg-white p-4"><div className="mb-3 flex items-center justify-between border-b border-[#CBDCEB] pb-2"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0F172A]"><ShieldAlert className="h-4 w-4 text-[#DC2626]" /> RISK AND VULNERABILITY REGISTER</div><span className="text-[10px] text-[#64748B]">EXPLAINABLE MODEL · DEMO DATA</span></div><div className="space-y-2">{mapCommunities.map((community) => { const risk = riskScoreForArea(community.coordinates, mapAlerts, mapCameras); const vulnerability = communityVulnerability(community, mapAlerts, mapCameras); return <div key={community.id} className="border border-[#CBDCEB] bg-[#F8FBFE] p-2.5"><div className="flex items-center justify-between gap-2 text-[10px] font-bold"><span className="truncate text-[#0F172A]">{community.name}</span><span className={scoreTone(Math.max(risk, vulnerability))}>{riskBandForScore(risk)} // RISK {risk}</span></div><div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-[#64748B]"><span>Population <strong className="text-[#0F172A]">{community.population.toLocaleString()}</strong></span><span>Vulnerability <strong className="text-[#A855F7]">{vulnerability}/100</strong></span></div><div className="mt-2 h-1.5 bg-[#E0ECF8]"><div className={cn("h-full", risk >= 70 ? "bg-[#DC2626]" : risk >= 38 ? "bg-[#D97706]" : "bg-[#16A34A]")} style={{ width: `${Math.max(risk, 10)}%` }} /></div></div>; })}</div></section>
       </div>
       <div className="border border-[#CBDCEB] bg-[#F8FBFE] px-4 py-3 text-[10px] text-[#64748B]">Sentrix ranks evidence, impact context and recommendations for authorized operators. It does not autonomously make law-enforcement or emergency decisions. Community reports and AI alerts require human review.</div>
       {createPoint && (
