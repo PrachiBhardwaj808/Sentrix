@@ -45,14 +45,14 @@ interface SentrixIntelligenceMapProps {
 
 const layerLabels: Record<keyof MapLayerVisibility, string> = {
   incidents: "INCIDENTS",
-  cameras: "CAMERAS",
-  communities: "COMMUNITIES",
-  resources: "RESOURCES",
-  roads: "ROUTES",
-  riskZones: "RISK ZONES",
-  vulnerability: "VULNERABILITY",
-  heatmap: "HEATMAP",
-  infrastructure: "INFRASTRUCTURE",
+  cameras: "CCTV CAMERAS",
+  communities: "COMMUNITIES & HABITATIONS",
+  resources: "EMERGENCY RESOURCES",
+  roads: "ROADS & ROUTES",
+  riskZones: "INCIDENT RISK ZONES",
+  vulnerability: "COMMUNITY VULNERABILITY",
+  heatmap: "INCIDENT DENSITY",
+  infrastructure: "CRITICAL INFRASTRUCTURE",
 };
 
 const resourceIcon = (type: string) => type === "hospital" ? Hospital : type === "ambulance" ? Ambulance : type === "fire" ? Flame : Radio;
@@ -212,7 +212,7 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
       />
 
       <div className="overflow-hidden border border-[#CBDCEB] bg-white shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#CBDCEB] bg-[#F0F6FC] p-3"><span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-[#475569]">GIS LAYERS</span>{(Object.keys(layerLabels) as Array<keyof MapLayerVisibility>).map((key) => <button key={key} type="button" onClick={() => toggleLayer(key)} className={cn("border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors", layers[key] ? "border-[#0284C7] bg-[#0284C7] text-white" : "border-[#CBDCEB] bg-white text-[#64748B]")}>{layerLabels[key]}</button>)}</div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#CBDCEB] bg-[#F0F6FC] p-3"><span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-[#475569]">INDIA GIS LAYERS</span>{(Object.keys(layerLabels) as Array<keyof MapLayerVisibility>).map((key) => <button key={key} type="button" onClick={() => toggleLayer(key)} className={cn("border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors", layers[key] ? "border-[#0284C7] bg-[#0284C7] text-white" : "border-[#CBDCEB] bg-white text-[#64748B]")}>{layerLabels[key]}</button>)}</div>
         <div className="grid min-h-[610px] grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="relative min-h-[580px] bg-[#0B192C]">
             <SentrixLeafletMap
