@@ -57,6 +57,15 @@ const layerLabels: Record<keyof MapLayerVisibility, string> = {
 
 const resourceIcon = (type: string) => type === "hospital" ? Hospital : type === "ambulance" ? Ambulance : type === "fire" ? Flame : Radio;
 const scoreTone = (score: number) => score >= 70 ? "text-[#DC2626]" : score >= 38 ? "text-[#D97706]" : "text-[#16A34A]";
+const DEMO_DELHI = { lat: 28.6139, lng: 77.2090 };
+const demoAlerts: Alert[] = [
+  { id: "DEMO-DELHI-01", level: "high", timestamp: new Date().toISOString(), sourceCameraId: "DEMO-CCTV-01", sourceCameraName: "Connaught Place Demo Camera", eventType: "Person detected — demo", confidence: 87, coordinates: { lat: 28.6315, lng: 77.2167 }, objectClass: "Person", evidenceUrl: "", status: "open", acknowledgedBy: null, sector: "New Delhi", notes: "Sample map record. Not a live incident.", evidenceSource: "demo" },
+  { id: "DEMO-DELHI-02", level: "medium", timestamp: new Date().toISOString(), sourceCameraId: "DEMO-CCTV-02", sourceCameraName: "India Gate Demo Camera", eventType: "Community report — demo", confidence: 74, coordinates: { lat: 28.6129, lng: 77.2295 }, objectClass: "Unknown", evidenceUrl: "", status: "open", acknowledgedBy: null, sector: "Central Delhi", notes: "Sample map record. Not a live incident.", evidenceSource: "demo" },
+];
+const demoCommunities: CommunityRecord[] = [
+  { id: "DEMO-COMM-01", name: "Demo Community · Connaught Place", population: 12000, coordinates: { lat: 28.635, lng: 77.21 }, accessScore: 72, emergencyDistanceKm: 1.2 },
+  { id: "DEMO-COMM-02", name: "Demo Community · India Gate", population: 18500, coordinates: { lat: 28.608, lng: 77.225 }, accessScore: 61, emergencyDistanceKm: 2.1 },
+];
 
 export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   sectors,
@@ -96,6 +105,16 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   }, []);
 
   const selectedAlert = alerts.find((alert) => alert.id === selectedAlertId) || null;
+  const mapAlerts = alerts.length ? alerts : demoAlerts;
+  const mapCommunities = communities.length ? communities : demoCommunities;
+  const mapResources = resources.length ? resources : [
+    { id: "DEMO-RES-01", name: "Demo Police Response · Connaught Place", type: "police" as const, coordinates: { lat: 28.628, lng: 77.219 }, available: true, capacity: 3 },
+    { id: "DEMO-RES-02", name: "Demo Ambulance · India Gate", type: "ambulance" as const, coordinates: { lat: 28.615, lng: 77.222 }, available: true, capacity: 2 },
+  ];
+  const mapInfrastructure = infrastructure.length ? infrastructure : [
+    { id: "DEMO-INFRA-01", name: "Demo Critical Site · Central Secretariat", type: "school" as const, coordinates: { lat: 28.614, lng: 77.212 }, criticality: "high" as const },
+  ];
+  const mapRoads = roads.length ? roads : [{ id: "DEMO-ROAD-01", name: "Demo Central Delhi Route", points: [{ lat: 28.635, lng: 77.209 }, { lat: 28.625, lng: 77.217 }, { lat: 28.613, lng: 77.229 }], status: "open" as const }];
   const selectedPoint = selectedAlert?.coordinates || communities[0]?.coordinates || cameras[0]?.coordinates || { lat: 28.6139, lng: 77.2090 };
   const filteredAlerts = useMemo(() => alerts.filter((alert) => {
     if (filters.severity && alert.level !== filters.severity) return false;
@@ -119,6 +138,17 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
   const overallRiskScore = Math.max(0, ...sectors.map((sector) => riskScoreForArea(sector.centerCoordinates, alerts, cameras)));
   const overallRiskBand = riskBandForScore(overallRiskScore);
   const toggleLayer = (key: keyof MapLayerVisibility) => setLayers((current) => ({ ...current, [key]: !current[key] }));
+  const layerCounts: Record<keyof MapLayerVisibility, number> = {
+    incidents: alerts.length,
+    cameras: cameras.length,
+    communities: communities.length,
+    resources: resources.length,
+    roads: roads.length,
+    riskZones: communities.length,
+    vulnerability: communities.length,
+    heatmap: alerts.length,
+    infrastructure: infrastructure.length,
+  };
 
   const loadWorkspace = (lat: number, lng: number, label: string) => {
     setWorkspaceLabel(label);
@@ -212,18 +242,23 @@ export const SentrixIntelligenceMap: React.FC<SentrixIntelligenceMapProps> = ({
       />
 
       <div className="overflow-hidden border border-[#CBDCEB] bg-white shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#CBDCEB] bg-[#F0F6FC] p-3"><span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-[#475569]">DELHI GIS LAYERS</span>{(Object.keys(layerLabels) as Array<keyof MapLayerVisibility>).map((key) => <button key={key} type="button" aria-pressed={layers[key]} onClick={() => toggleLayer(key)} className={cn("border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors", layers[key] ? "border-[#0284C7] bg-[#0284C7] text-white" : "border-[#CBDCEB] bg-white text-[#64748B]")}>{layerLabels[key]} · {layers[key] ? "ON" : "OFF"}</button>)}</div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#CBDCEB] bg-[#F0F6FC] p-3"><span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-[#475569]">DELHI GIS LAYERS</span>{(Object.keys(layerLabels) as Array<keyof MapLayerVisibility>).map((key) => <button key={key} type="button" aria-pressed={layers[key]} onClick={() => toggleLayer(key)} className={cn("border px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors", layers[key] ? "border-[#0284C7] bg-[#0284C7] text-white" : "border-[#CBDCEB] bg-white text-[#64748B]")}>{layerLabels[key]} · {layers[key] ? "ON" : "OFF"} · {layerCounts[key]}</button>)}</div>
+        <div className="border-b border-[#CBDCEB] bg-white px-3 py-1.5 text-[10px] text-[#475569]" role="status" aria-live="polite">
+          {Object.entries(layerLabels).filter(([key]) => layers[key as keyof MapLayerVisibility] && layerCounts[key as keyof MapLayerVisibility] === 0).length
+            ? `No Delhi records loaded for: ${Object.entries(layerLabels).filter(([key]) => layers[key as keyof MapLayerVisibility] && layerCounts[key as keyof MapLayerVisibility] === 0).map(([, label]) => label).join(", ")}. Import verified Delhi GeoJSON records or add records through the admin workflow.`
+            : "Layer visibility updated. Counts show loaded records for each layer."}
+        </div>
         <div className="grid min-h-[610px] grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="relative min-h-[580px] bg-[#0B192C]">
             <SentrixLeafletMap
               ref={mapHandle}
               sectors={sectors}
-              cameras={cameras}
-              alerts={alerts}
-              communities={communities}
-              resources={resources}
-              infrastructure={infrastructure}
-              roads={roads}
+              cameras={cameras.length ? cameras : [{ id: "DEMO-CCTV-01", name: "Demo CCTV · Connaught Place", sector: "New Delhi", rtspUrl: "", type: "fixed", aiActive: true, personDetection: true, vehicleDetection: true, coordinates: { lat: 28.632, lng: 77.214 }, status: "online" } as Camera]}
+              alerts={mapAlerts}
+              communities={mapCommunities}
+              resources={mapResources}
+              infrastructure={mapInfrastructure}
+              roads={mapRoads}
               layers={layers}
               selectedAlertId={selectedAlertId}
               onSelectAlert={setSelectedAlertId}
