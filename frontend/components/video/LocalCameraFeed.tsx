@@ -525,6 +525,29 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
       ));
       const localReviewKey = `${sourceMode}:${sourceLabel}`;
       const alertCoordinates = selectedAnalyticsCamera?.coordinates;
+      const personDetections = result.detections.filter((detection) =>
+        detection.label.toLowerCase() === "person" || detection.source === "person_tracking"
+      );
+      if (personDetections.length && alertCoordinates && !reportedFaceReviewRef.current.has(`person:${localReviewKey}`)) {
+        reportedFaceReviewRef.current.add(`person:${localReviewKey}`);
+        const strongest = personDetections.reduce((best, detection) => detection.confidence > best.confidence ? detection : best);
+        addAlert({
+          level: "medium",
+          sourceCameraId: selectedAnalyticsCameraId || "LOCAL-FEED",
+          sourceCameraName: selectedAnalyticsCamera?.name || sourceLabel,
+          eventType: "Person detected — operator review required",
+          confidence: Math.round(strongest.confidence * 100),
+          coordinates: alertCoordinates,
+          objectClass: "Person",
+          evidenceUrl: evidenceFrame,
+          sector: selectedAnalyticsCamera?.sector || "Live Feed",
+          notes: `${personDetections.length} person detection${personDetections.length === 1 ? "" : "s"} observed. Review the captured evidence before taking action.`,
+          evidenceSource: "ai_frame",
+          identityStatus: "unidentified",
+          reviewStatus: "operator_review",
+          requiresOperatorReview: true,
+        });
+      }
       if (hasFace && alertCoordinates && (!selectedAnalyticsCameraId || backendStatus === "offline") && !reportedFaceReviewRef.current.has(localReviewKey)) {
         reportedFaceReviewRef.current.add(localReviewKey);
         addAlert({
