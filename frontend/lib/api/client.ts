@@ -233,7 +233,7 @@ export interface CreateDemoProfilePayload {
 
 export interface FrameDetection {
   label: string;
-  source: "person_tracking" | "face_detection" | "anpr" | string;
+  source: "person_tracking" | "face_detection" | "anpr" | "traffic_accident" | string;
   confidence: number;
   box: { x: number; y: number; width: number; height: number };
   trackId?: string | null;

@@ -39,7 +39,7 @@ interface TimelineEvent {
   detail?: string;
 }
 
-const INFERENCE_MODULES = ["person_tracking", "face_detection", "anpr"];
+const INFERENCE_MODULES = ["person_tracking", "face_detection", "anpr", "traffic_accident"];
 
 const canvasToBlob = (canvas: HTMLCanvasElement) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.72));
@@ -528,6 +528,26 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
       const personDetections = result.detections.filter((detection) =>
         detection.label.toLowerCase() === "person" || detection.source === "person_tracking"
       );
+      const accidentDetections = result.detections.filter((detection) => detection.source === "traffic_accident");
+      if (accidentDetections.length && alertCoordinates && !reportedFaceReviewRef.current.has(`accident:${localReviewKey}`)) {
+        reportedFaceReviewRef.current.add(`accident:${localReviewKey}`);
+        const strongest = accidentDetections.reduce((best, detection) => detection.confidence > best.confidence ? detection : best);
+        addAlert({
+          level: "critical",
+          sourceCameraId: selectedAnalyticsCameraId || "LOCAL-FEED",
+          sourceCameraName: selectedAnalyticsCamera?.name || sourceLabel,
+          eventType: "Possible traffic accident — operator review required",
+          confidence: Math.round(strongest.confidence * 100),
+          coordinates: alertCoordinates,
+          objectClass: "Vehicle",
+          evidenceUrl: evidenceFrame,
+          sector: selectedAnalyticsCamera?.sector || "Live Feed",
+          notes: `Accident model detected ${accidentDetections.map((detection) => detection.label).join(", ")}. This is an unverified candidate; review the evidence before dispatch.`,
+          evidenceSource: "ai_frame",
+          reviewStatus: "operator_review",
+          requiresOperatorReview: true,
+        });
+      }
       if (personDetections.length && alertCoordinates && !reportedFaceReviewRef.current.has(`person:${localReviewKey}`)) {
         reportedFaceReviewRef.current.add(`person:${localReviewKey}`);
         const strongest = personDetections.reduce((best, detection) => detection.confidence > best.confidence ? detection : best);

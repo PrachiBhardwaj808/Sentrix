@@ -29,7 +29,7 @@ class InferenceConfigurationError(RuntimeError):
 
 _PIPELINE_LOCK = threading.Lock()
 _PIPELINE: "LiveInferencePipeline | None" = None
-_MODULE_IDS = frozenset({"person_tracking", "face_detection", "anpr", "weapon_detection"})
+_MODULE_IDS = frozenset({"person_tracking", "face_detection", "anpr", "weapon_detection", "traffic_accident"})
 _DEFAULT_MODULE_IDS = frozenset({"person_tracking", "face_detection", "anpr"})
 
 
@@ -101,6 +101,9 @@ class LiveInferenceConfig:
     face_provider: str = "opencv_yolo"
     insightface_model_name: str = "buffalo_l"
     insightface_root: str = ""
+    accident_model_path: Path = Path("traffic-accident.pt")
+    accident_enabled: bool = False
+    accident_confidence: float = 0.55
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "LiveInferenceConfig":
@@ -113,9 +116,12 @@ class LiveInferenceConfig:
             anpr_vehicle_model_path=_model_path(values, "ANPR_VEHICLE_MODEL_PATH", person_model_path),
             anpr_plate_model_path=_model_path(values, "ANPR_PLATE_MODEL_PATH", model_dir / "INPD_more_accuracy_n.pt"),
             weapon_model_path=_model_path(values, "WEAPON_MODEL_PATH", model_dir / "weapon.pt"),
+            accident_model_path=_model_path(values, "TRAFFIC_ACCIDENT_MODEL_PATH", model_dir / "traffic-accident.pt"),
             person_enabled=_env_flag(values, "AI_ENABLE_PERSON_TRACKING", True),
             face_enabled=_env_flag(values, "AI_ENABLE_FACE_DETECTION", True),
             anpr_enabled=_env_flag(values, "AI_ENABLE_ANPR", True),
+            accident_enabled=_env_flag(values, "AI_ENABLE_TRAFFIC_ACCIDENT", False),
+            accident_confidence=_env_float(values, "AI_TRAFFIC_ACCIDENT_CONFIDENCE", 0.55),
             person_confidence=_env_float(values, "AI_FRAME_CONFIDENCE", 0.50),
             face_confidence=_env_float(values, "AI_FACE_CONFIDENCE", 0.50),
             anpr_vehicle_confidence=_env_float(values, "AI_ANPR_VEHICLE_CONFIDENCE", 0.45),
@@ -153,6 +159,7 @@ class LiveInferencePipeline:
         self._person_service: Any = None
         self._face_service: Any = None
         self._anpr_service: Any = None
+        self._accident_model: Any = None
         self._frame_index = 0
         self._cached_module_detections: dict[str, list[dict[str, Any]]] = {}
         self._cached_module_results: dict[str, dict[str, Any]] = {}
@@ -247,6 +254,8 @@ class LiveInferencePipeline:
                     message="Optional adapter not configured; no weapon claim is made.",
                 )
             )
+        if "traffic_accident" in selected:
+            modules.append(self._run_accident(inference_frame, width, height, scale_x, scale_y, detections))
         unavailable = any(module["status"] == "unavailable" for module in modules)
         metrics_registry = get_metrics_registry()
         for module in modules:
@@ -432,6 +441,35 @@ class LiveInferencePipeline:
             self._cache_module("anpr", module, [])
             return module
 
+    def _run_accident(self, frame: Any, width: int, height: int, scale_x: float, scale_y: float, output: list[dict[str, Any]]) -> dict[str, Any]:
+        started = time.perf_counter()
+        if not self.config.accident_enabled:
+            return _with_module_timing(_module_result("traffic_accident", "Traffic accident detection", self.config.accident_model_path, "disabled", message="Set AI_ENABLE_TRAFFIC_ACCIDENT=true and configure TRAFFIC_ACCIDENT_MODEL_PATH to enable the optional model."), started)
+        try:
+            if not self.config.accident_model_path.is_file():
+                return _with_module_timing(_module_result("traffic_accident", "Traffic accident detection", self.config.accident_model_path, "unavailable", message="Configured accident model file was not found."), started)
+            if self._accident_model is None:
+                from ultralytics import YOLO
+                self._accident_model = YOLO(str(self.config.accident_model_path))
+            results = self._accident_model.predict(frame, conf=self.config.accident_confidence, device=self.config.device, verbose=False)
+            count = 0
+            for result in results:
+                names = result.names
+                boxes = getattr(result, "boxes", None)
+                if boxes is None:
+                    continue
+                for box in boxes:
+                    class_id = int(box.cls.item())
+                    label = str(names[class_id])
+                    if "accident" not in label.lower() and "crash" not in label.lower() and "collision" not in label.lower():
+                        continue
+                    xyxy = [int(value) for value in box.xyxy[0].tolist()]
+                    detection = InferenceDetection(label=label, confidence=float(box.conf.item()), bounding_box=BoundingBox(*xyxy), attributes={"review_required": True, "model": str(self.config.accident_model_path.name)})
+                    output.append(_serialize_detection(detection, "traffic_accident", width, height, scale_x, scale_y))
+                    count += 1
+            return _with_module_timing(_module_result("traffic_accident", "Traffic accident detection", self.config.accident_model_path, "active", count, "Candidate detections require operator review."), started)
+        except Exception as exc:
+            return _with_module_timing(_module_result("traffic_accident", "Traffic accident detection", self.config.accident_model_path, "unavailable", message=_module_error(exc)), started)
     def _cache_module(
         self,
         module_id: str,
