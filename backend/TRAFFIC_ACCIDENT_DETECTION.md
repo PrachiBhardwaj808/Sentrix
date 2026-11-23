@@ -35,3 +35,12 @@ These user-provided resources are references, not bundled code or data. Confirm 
 - [ACCIDENT benchmark](https://github.com/accidentbench/ACCIDENT) — surveillance-video benchmark and baselines; review dataset terms before use.
 - [Car Crash Dataset (CCD)](https://www.kaggle.com/datasets/asefjamilajwad/car-crash-dataset-ccd), [ACCIDENT competition](https://www.kaggle.com/competitions/accident), and [Nexar collision prediction](https://www.kaggle.com/competitions/nexar-collision-prediction) — datasets/benchmarks are not bundled or downloaded by Sentrix.
 - [Nexar crash prediction training code](https://github.com/Jatin-Mehra119/-Nexar-Dashcam-Crash-Prediction-Challenge) — reference training pipeline.
+
+The pinned model used by this adapter is `epoch61.pt` from the YOLO11x repository revision `cdc556d278e00273fc3af373051b0df2fb7c7f1e` (SHA-256 `ea56e358905e79e1451170e699b21ad774ca95e12034ae1ab1f7d09fd3619cae`). Download or verify it with:
+
+```bash
+cd backend
+./venv/bin/python scripts/download_traffic_accident_model.py
+```
+
+The model file is stored under `.localdata/models/` and is intentionally excluded from Git. This avoids committing the 109 MiB binary while keeping retrieval reproducible.
