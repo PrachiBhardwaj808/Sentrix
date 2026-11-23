@@ -90,7 +90,7 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const timelineFingerprintRef = useRef({ value: "", timestamp: 0 });
   const reportedMatchesRef = useRef<Set<string>>(new Set());
-  const reportedFaceReviewRef = useRef<Set<string>>(new Set());
+  const reportedFaceReviewRef = useRef<Map<string, number>>(new Map());
   const lastAnalyticsAtRef = useRef(0);
   const [analysisCameraId, setAnalysisCameraId] = useState("");
   const selectedAnalyticsCameraId = analysisCameraId || cameras[0]?.id || "";
@@ -524,13 +524,22 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
         detection.label.toLowerCase() === "face" || detection.source === "face_detection"
       ));
       const localReviewKey = `${sourceMode}:${sourceLabel}`;
-      const alertCoordinates = selectedAnalyticsCamera?.coordinates;
+      // Keep map incidents locatable even for a local/file feed without a
+      // registered camera. The alert note clearly marks this fallback as approximate.
+      const hasVerifiedCoordinates = Boolean(selectedAnalyticsCamera?.coordinates);
+      const alertCoordinates = selectedAnalyticsCamera?.coordinates || { lat: 28.6139, lng: 77.209 };
+      const canRaiseIncident = (key: string) => {
+        const timestamp = Date.now();
+        const previous = reportedFaceReviewRef.current.get(key) || 0;
+        if (timestamp - previous < 30_000) return false;
+        reportedFaceReviewRef.current.set(key, timestamp);
+        return true;
+      };
       const personDetections = result.detections.filter((detection) =>
         detection.label.toLowerCase() === "person" || detection.source === "person_tracking"
       );
       const accidentDetections = result.detections.filter((detection) => detection.source === "traffic_accident");
-      if (accidentDetections.length && alertCoordinates && !reportedFaceReviewRef.current.has(`accident:${localReviewKey}`)) {
-        reportedFaceReviewRef.current.add(`accident:${localReviewKey}`);
+      if (accidentDetections.length && canRaiseIncident(`accident:${localReviewKey}`)) {
         const strongest = accidentDetections.reduce((best, detection) => detection.confidence > best.confidence ? detection : best);
         addAlert({
           level: "critical",
@@ -542,14 +551,13 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
           objectClass: "Vehicle",
           evidenceUrl: evidenceFrame,
           sector: selectedAnalyticsCamera?.sector || "Live Feed",
-          notes: `Accident model detected ${accidentDetections.map((detection) => detection.label).join(", ")}. This is an unverified candidate; review the evidence before dispatch.`,
+          notes: `Accident model detected ${accidentDetections.map((detection) => detection.label).join(", ")}. This is an unverified candidate; review the evidence before dispatch.${hasVerifiedCoordinates ? "" : " Location is approximate (Delhi center); assign a camera with verified coordinates."}`,
           evidenceSource: "ai_frame",
           reviewStatus: "operator_review",
           requiresOperatorReview: true,
         });
       }
-      if (personDetections.length && alertCoordinates && !reportedFaceReviewRef.current.has(`person:${localReviewKey}`)) {
-        reportedFaceReviewRef.current.add(`person:${localReviewKey}`);
+      if (personDetections.length && canRaiseIncident(`person:${localReviewKey}`)) {
         const strongest = personDetections.reduce((best, detection) => detection.confidence > best.confidence ? detection : best);
         addAlert({
           level: "medium",
@@ -561,15 +569,14 @@ export const LocalCameraFeed: React.FC<LocalCameraFeedProps> = ({ className }) =
           objectClass: "Person",
           evidenceUrl: evidenceFrame,
           sector: selectedAnalyticsCamera?.sector || "Live Feed",
-          notes: `${personDetections.length} person detection${personDetections.length === 1 ? "" : "s"} observed. Review the captured evidence before taking action.`,
+          notes: `${personDetections.length} person detection${personDetections.length === 1 ? "" : "s"} observed. Review the captured evidence before taking action.${hasVerifiedCoordinates ? "" : " Location is approximate (Delhi center); assign a camera with verified coordinates."}`,
           evidenceSource: "ai_frame",
           identityStatus: "unidentified",
           reviewStatus: "operator_review",
           requiresOperatorReview: true,
         });
       }
-      if (hasFace && alertCoordinates && (!selectedAnalyticsCameraId || backendStatus === "offline") && !reportedFaceReviewRef.current.has(localReviewKey)) {
-        reportedFaceReviewRef.current.add(localReviewKey);
+      if (hasFace && (!selectedAnalyticsCameraId || backendStatus === "offline") && canRaiseIncident(`face:${localReviewKey}`)) {
         addAlert({
           level: "medium",
           sourceCameraId: "LOCAL-FEED",
