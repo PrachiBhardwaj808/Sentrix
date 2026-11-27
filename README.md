@@ -103,15 +103,15 @@ Sentrix provides an end-to-end investigation workspace centered on the **distric
 
 ### Partially Implemented / Supporting Features
 - **Cross-Camera Vehicle Tracing:** Single-camera `repeated_plate` detection, plate `watchlist`, and camera-level alert coordinates are implemented; automated multi-camera fuzzy plate-similarity and travel-time trail linking is **planned / in progress**.
-- **Real-Time WebSocket Updates:** Implemented at `/ws/alerts/` via Django Channels + Daphne (`asgi.py`) and verified in tests; local `runserver` serves ASGI, while the current `docker-compose.production.yml` runs Gunicorn WSGI (requiring Daphne/ASGI for production WebSockets).
+- **Real-Time WebSocket Updates:** Works on ASGI (`/ws/alerts/` via Django Channels + Daphne in local `runserver` and tests); `docker-compose.production.yml` currently runs Gunicorn WSGI and needs switching to Daphne/ASGI for production WebSockets.
 
 ---
 
 ## 6. Unique Selling Proposition (USP)
 
 1. **Human-in-the-Loop by Design:** AI outputs are strictly candidate observations (`requiresOperatorReview: true`); no automated dispatch or enforcement occurs without officer confirmation.
-2. **Indian Plate OCR Normalization:** Evaluates variable Indian state/district/series/number splits with minimal-substitution OCR confusion repair (`O/0`, `B/8`, `S/5`, `I/1`, `Z/2`).
-3. **Graceful Offline-First Degradation:** Runs without cloud dependencies on SQLite + Haversine + local hash chain, and upgrades to PostGIS + Redis + optional external integrations when configured.
+2. **Unified Investigation & Dispatch Console:** Combines CCTV inference overlays, GIS camera-level visualization, straight-line responder lookup, OTP-verified dispatch, and a tamper-evident SHA-256 audit chain in one role-gated workflow.
+3. **Graceful Spatial Fallback:** Uses PostGIS GiST/geography operators in PostgreSQL and falls back to in-memory Haversine calculations when running without PostGIS.
 
 ---
 
@@ -409,7 +409,7 @@ Verified locally and configured in [.github/workflows/ci.yml](.github/workflows/
 | **Evidence Integrity** | **Verified (Local Tests)** | Local SHA-256 hash chain over `alerts` and `activityLog` + `/api/audit-chain` verified in `test_audit_chain.py`. |
 | **Operator Review & Triage** | **Verified (Local Tests)** | `CameraRuleEngine`, `TriageAgent`, `requiresOperatorReview`, and `alert_action` lifecycle verified in unit tests. |
 | **Dispatch & OTP** | **Verified (Local Tests)** | Straight-line nearest-responder lookup + `command`/`admin` dispatch + 6-digit OTP verification verified in unit tests (Exotel SMS mocked in tests). |
-| **Real-Time WebSockets** | **Partial (Dev ASGI / Prod WSGI)** | `/ws/alerts/` works on local ASGI (`runserver`/Daphne) and passes tests; `docker-compose.production.yml` currently uses Gunicorn WSGI. |
+| **Real-Time WebSockets** | **Partial (ASGI Only)** | Works on ASGI (`/ws/alerts/` in local `runserver`/Daphne and unit tests); `docker-compose.production.yml` currently uses Gunicorn WSGI and needs Daphne for production WebSockets. |
 
 ---
 
@@ -462,7 +462,7 @@ Verified locally and configured in [.github/workflows/ci.yml](.github/workflows/
 
 ## 33. License
 
-This project is licensed under the MIT License. See [backend/THIRD_PARTY_NOTICES.md](backend/THIRD_PARTY_NOTICES.md) for third-party notices (including the Apache-2.0 ANPR adaptation).
+The Sentrix application code is licensed under the MIT License — see [LICENSE](LICENSE). Optional AI runtime dependencies in [backend/requirements-ai.txt](backend/requirements-ai.txt) include **Ultralytics YOLO (`ultralytics`)**, which is dual-licensed under **AGPL-3.0** or a commercial license; production or commercial deployments must comply with AGPL-3.0, obtain a commercial Ultralytics license, or swap in a permissively licensed detector. See [backend/THIRD_PARTY_NOTICES.md](backend/THIRD_PARTY_NOTICES.md) for full third-party notices.
 
 ---
 
