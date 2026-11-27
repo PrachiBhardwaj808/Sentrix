@@ -32,7 +32,24 @@ class AnprServiceTests(unittest.TestCase):
     def test_plate_normalization_supports_common_variable_formats(self) -> None:
         self.assertEqual(normalize_indian_plate("MH 12 AB 1234"), "MH12AB1234")
         self.assertEqual(normalize_indian_plate("DL1C1234"), "DL1C1234")
+        self.assertEqual(normalize_indian_plate("MH01A123"), "MH01A123")
         self.assertTrue(is_indian_plate("KA05M1234"))
+
+    def test_plate_normalization_supports_bharat_series_and_temporary_formats(self) -> None:
+        self.assertEqual(normalize_indian_plate("22 BH 1234 AA"), "22BH1234AA")
+        self.assertTrue(is_indian_plate("22BH1234AA"))
+        self.assertTrue(is_indian_plate("24BH0001A"))
+        self.assertEqual(normalize_indian_plate("228H1234AA"), "22BH1234AA")
+        self.assertTrue(is_indian_plate("MH12TR1234"))
+        self.assertTrue(is_indian_plate("TS09T1234AA"))
+
+    def test_plate_normalization_repairs_ocr_confusions(self) -> None:
+        self.assertEqual(normalize_indian_plate("MHI2AB1234"), "MH12AB1234")
+        self.assertEqual(normalize_indian_plate("DL01C123O"), "DL01C1230")
+
+    def test_plate_validation_rejects_invalid_inputs(self) -> None:
+        for invalid in ("", "ABC", "12345678", "MH12AB", "TOOLONGPLATE123", "12AB1234CD"):
+            self.assertFalse(is_indian_plate(invalid), f"Expected rejection for {invalid!r}")
 
     def test_missing_plate_model_uses_vehicle_crop_ocr(self) -> None:
         service = AnprService("vehicle.pt", "missing-plate.pt", device="cpu")
