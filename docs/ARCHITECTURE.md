@@ -141,15 +141,15 @@ sequenceDiagram
 
 ## 6. Cross-Camera Vehicle Tracing Logic
 
-### Currently Implemented
+### Implemented in Backend Services (`anpr/tracing.py` & `analytics/rules.py`)
 
 - **Single-camera repeated plate rule:** `CameraRuleEngine` (`rules.py`) tracks normalized plates per camera over a rolling 300-second window and raises a `repeated_plate` candidate event when occurrences reach `repeatedPlateThreshold` (default `3`).
-- **Plate watchlist:** Operators can register `plate` entries via `POST /api/watchlist` and inspect them in the console.
-- **Alert & map linkage:** Alerts store `plateNumber`, `sourceCameraId`, `timestamp`, and camera-level `coordinates`, allowing operators to filter and inspect sightings on the Leaflet map.
+- **Plate watchlist & alert linkage:** Operators can register `plate` entries via `POST /api/watchlist`; alerts store `plateNumber`, `sourceCameraId`, `timestamp`, and camera-level `coordinates`.
+- **Cross-camera trail association & wildcard search (`tracing.py`):** OCR-confusion-aware fuzzy plate similarity, partial/wildcard matching (e.g., `DL1?ER48??`), chronological ordering, Haversine speed-plausibility filtering (`max_speed_kmh`), and per-link confidence scoring with `requiresOperatorReview: true`.
 
-### Planned (Not Yet Implemented End-to-End)
+### Still Required End-to-End
 
-- Automated **cross-camera association** that links candidate sightings across multiple cameras using fuzzy plate edit-distance similarity, inter-camera straight-line/road distance, and travel-time plausibility scoring, rendered as an automated multi-camera trail with per-link confidence.
+- Continuous backend RTSP ingest worker persisting every plate read into a relational `vehicleSightings` table with retention/purge controls, plus REST endpoint and Leaflet map trail overlay wiring.
 
 ---
 

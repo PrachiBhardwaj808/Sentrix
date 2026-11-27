@@ -31,7 +31,7 @@ backend/
 │       └── triage/agent.py        # Reviewable incident fusion
 ├── blockchain/contracts/          # Optional EvidenceRegistry.sol (frozen/secondary)
 ├── config/                        # settings.py, urls.py, asgi.py, wsgi.py, mediamtx.yml
-├── tests/                         # 22 unit test files (88 tests)
+├── tests/                         # 23 unit test files (95 tests)
 ├── manage.py
 ├── requirements-web.txt
 ├── requirements-services.txt
@@ -53,7 +53,7 @@ backend/
 
 See [docs/HOW_TO_RUN.md](../docs/HOW_TO_RUN.md) for full setup instructions.
 
-Run the **88 backend unit tests** from the **repository root** (`Sentrix/`):
+Run the **95 backend unit tests** from the **repository root** (`Sentrix/`):
 
 ```bash
 # Linux / macOS:

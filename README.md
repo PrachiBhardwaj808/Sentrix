@@ -94,7 +94,7 @@ Sentrix provides an end-to-end investigation workspace centered on the **distric
 
 ### Core Investigation Capabilities (Implemented / Verified in Code)
 - **CCTV Vehicle & Person Detection:** Ultralytics YOLO detection (COCO vehicle classes `2, 3, 5, 7` and person tracking via DeepSORT).
-- **Indian ANPR & Plate Normalization:** Dedicated plate detector support (`ANPR_PLATE_MODEL_PATH`) with automatic vehicle-crop EasyOCR fallback and Indian registration format validation (`^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{1,4}$`).
+- **Indian ANPR & Plate Normalization:** Dedicated plate detector support (`ANPR_PLATE_MODEL_PATH`) with automatic vehicle-crop EasyOCR fallback and Indian registration format validation (standard, older, temporary, and Bharat-series `BH` plates).
 - **Explainable Camera Rules & Triage:** Camera-scoped rules (`repeated_plate`, `virtual_fence_intrusion`, `loitering`, `night_movement`, `crowd_formation`) producing operator-reviewable incident candidates.
 - **GIS Command Map:** Interactive Leaflet map with viewport-paginated features (`/api/map/features`), offline-first search (`/api/map/search`), and per-location workspace (`/api/map/workspace`).
 - **Nearest-Responder Lookup & OTP Dispatch:** Straight-line proximity query (`/api/map/nearest-responders`), corridor check (`/api/map/route`), and 6-digit OTP dispatch verification (`/api/alerts/<id>/dispatch`).
@@ -179,7 +179,7 @@ Verified directly from [frontend/package.json](frontend/package.json), [backend/
 | **Database & Cache** | SQLite (local default), PostgreSQL 16 + PostGIS 3.5 (`postgis/postgis:16-3.5`), Redis 7 (`redis:7-alpine`, `redis>=5.2,<7.0`, `channels-redis>=4.0,<5.0`) |
 | **Media & Reverse Proxy** | MediaMTX (`bluenviron/mediamtx:latest`), Caddy 2 (`caddy:2-alpine`) |
 | **Optional Integrations** | `firebase-admin` `>=6.5,<7.0`, `web3` `>=7.0,<8.0`, Exotel SMS REST API, Pinata IPFS API |
-| **Testing & CI** | Python `unittest` (88 tests), Vitest `^2.1.8` (7 tests), Ruff, Gitleaks, GitHub Actions |
+| **Testing & CI** | Python `unittest` (95 tests), Vitest `^2.1.8` (7 tests), Ruff, Gitleaks, GitHub Actions |
 
 ---
 
@@ -356,7 +356,7 @@ Verified locally and configured in [.github/workflows/ci.yml](.github/workflows/
 
 | Suite | Command (from repo root or `frontend/`) | Verified Result |
 |---|---|---|
-| **Backend Unit Tests** | `DJANGO_DEBUG=true python -m unittest discover -s backend/tests -v` | **88 tests across 22 files passed** |
+| **Backend Unit Tests** | `DJANGO_DEBUG=true python -m unittest discover -s backend/tests -v` | **95 tests across 23 files passed** |
 | **Django System Check** | `DJANGO_DEBUG=true python backend/manage.py check` | Configuration check |
 | **Frontend Unit Tests** | `cd frontend && npm test` | **7 tests across 2 files passed** (`search.test.ts`, `websocket.test.ts`) |
 | **Frontend Typecheck & Build** | `cd frontend && npm run typecheck && npm run build` | Enforced in GitHub Actions CI |
@@ -404,9 +404,9 @@ Verified locally and configured in [.github/workflows/ci.yml](.github/workflows/
 |---|---|---|
 | **Vehicle Detection** | **Implemented (Unbenchmarked)** | Ultralytics YOLO vehicle localization (COCO classes `2, 3, 5, 7`) in `AnprService`; accuracy not yet benchmarked. |
 | **ANPR & Plate Normalization** | **Implemented (Unbenchmarked)** | Dedicated plate model or vehicle-crop EasyOCR fallback + Indian plate format/OCR-confusion normalization (`plate_format.py`); 2 unit tests pass. |
-| **Cross-Camera Tracing** | **Partial / Planned** | Single-camera `repeated_plate` rule and plate `watchlist` exist; automated multi-camera trail linking with travel-time plausibility is planned. |
+| **Cross-Camera Tracing** | **Partial (Core Logic Implemented)** | OCR-confusion fuzzy similarity, wildcard search (`DL1?ER48??`), and speed-plausibility trail linking implemented & tested in `tracing.py`; relational sightings store, API endpoint, and map trail UI remain to be wired. |
 | **GIS Visualization** | **Verified (Local Tests)** | Leaflet map, `/api/map/features`, `/search`, `/nearby`, `/workspace`, and PostGIS/Haversine spatial store verified in unit tests. |
-| **Evidence Integrity** | **Verified (Local Tests)** | Local SHA-256 hash chain over `alerts` and `activityLog` + `/api/audit-chain` verified in `test_audit_chain.py`. |
+| **Evidence Integrity** | **Verified (Local Tests)** | Local SHA-256 hash chain with optional `AUDIT_CHAIN_HMAC_KEY` HMAC-SHA256 signing over `alerts`, `activityLog`, and `vehicleSightings` verified in `test_audit_chain.py`. |
 | **Operator Review & Triage** | **Verified (Local Tests)** | `CameraRuleEngine`, `TriageAgent`, `requiresOperatorReview`, and `alert_action` lifecycle verified in unit tests. |
 | **Dispatch & OTP** | **Verified (Local Tests)** | Straight-line nearest-responder lookup + `command`/`admin` dispatch + 6-digit OTP verification verified in unit tests (Exotel SMS mocked in tests). |
 | **Real-Time WebSockets** | **Partial (ASGI Only)** | Works on ASGI (`/ws/alerts/` in local `runserver`/Daphne and unit tests); `docker-compose.production.yml` currently uses Gunicorn WSGI and needs Daphne for production WebSockets. |
