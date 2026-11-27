@@ -1,40 +1,36 @@
 # Sentrix Technical Documentation Index
 
-Welcome to the **Sentrix** documentation directory. All technical specifications, architectural designs, deployment manuals, and audit reports are categorized below.
+Central catalog for **Sentrix — Hit-and-Run Vehicle Tracing & Cross-Camera Investigation Platform**.
 
 ---
 
-## Documentation Categories
+## Primary Documentation
 
-### 1. Architecture
-System architecture diagrams, data flow models, and component boundaries.
-- [`docs/architecture/system-architecture.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/architecture/system-architecture.md) — Comprehensive architecture specification, service topology, PostGIS data flows, and security boundaries.
+| Document | Purpose |
+|---|---|
+| [README.md](../README.md) | Project overview, problem statement, features, tech stack, implementation status, and quick links |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Consolidated system architecture, AI inference pipeline, cross-camera tracing design, GIS integration, database design, and API/security boundaries |
+| [HOW_TO_RUN.md](HOW_TO_RUN.md) | Prerequisites, environment configuration, AI model setup, local & Docker execution, testing, and troubleshooting |
 
-### 2. Implementation
-Technical implementation details, backend worker integration, and frontend engineering specifications.
-- [`docs/implementation/implementation.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/implementation/implementation.md) — Core backend implementation plan, computer vision worker integration, and data persistence contracts.
-- [`docs/implementation/frontend-implementation.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/implementation/frontend-implementation.md) — Full web platform implementation plan, command console UI specifications, and guard duty module design.
+---
 
-### 3. Blockchain & Cryptography
-Decentralized evidence integrity verification and smart contract infrastructure.
-- [`docs/blockchain/blockchain-implementation.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/blockchain/blockchain-implementation.md) — Architecture of tamper-evident chain-of-custody, SHA-256 evidence hashing, and dual-dispatch to IPFS/EVM.
-- [`docs/blockchain/blockchain-setup.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/blockchain/blockchain-setup.md) — Setup guide for local Ganache / Hardhat EVM testnets and `EvidenceRegistry.sol` contract deployment.
+## Supporting & Reference Documentation
 
-### 4. Deployment & Infrastructure
-Containerization, hardware sizing, network requirements, and cloud deployment guides.
-- [`docs/deployment/DOCKER.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/deployment/DOCKER.md) — Docker Compose instructions for local development and multi-container orchestration.
-- [`docs/deployment/hardware-and-deployment.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/deployment/hardware-and-deployment.md) — Production hardware sizing, edge AI accelerator specs, and high-availability server topologies.
+### Audits & Operations
+- [reports/PRODUCTION_READINESS.md](reports/PRODUCTION_READINESS.md) — Conservative production-readiness audit, security boundaries, and deployment checklist.
+- [deployment/hardware-and-deployment.md](deployment/hardware-and-deployment.md) — Hardware sizing profiles, prototype CPU throughput benchmarks, and hybrid deployment topology.
+- [infrastructure/deployment/README.md](../infrastructure/deployment/README.md) — Single-host production Docker Compose, Caddy TLS, and firewall guide.
 
-### 5. Guides & Developer Onboarding
-Step-by-step developer manuals and quickstart guides.
-- [`docs/guides/HOW_TO_RUN.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/guides/HOW_TO_RUN.md) — Developer quickstart guide for launching the backend, frontend, and media relay locally.
-- [`docs/guides/structured.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/guides/structured.md) — Comprehensive technical reference and developer onboarding walkthrough.
+### Module & Service Guides
+- [backend/README.md](../backend/README.md) — Django backend layout, capabilities, and test commands.
+- [frontend/README.md](../frontend/README.md) — Next.js 16 command console structure and local setup.
+- [infrastructure/README.md](../infrastructure/README.md) — Infrastructure and Firebase configuration index.
+- [scripts/README.md](../scripts/README.md) — Local multi-service launcher scripts (`start_all.bat` / `start_all.sh`).
+- [backend/app/services/inference/README.md](../backend/app/services/inference/README.md) — AI module integration boundaries and model weight paths.
+- [backend/app/services/cameras/README.md](../backend/app/services/cameras/README.md) — MediaMTX RTSP/HLS/WebRTC relay and private-IP validation.
 
-### 6. Feature Documentation
-Detailed functional workflows and operator manuals.
-- `docs/feature-documentation/Sentrix_Features_and_Workflow.docx` — Complete operational workflow specifications, incident triage guidelines, and field operator procedures.
-
-### 7. Audits & Reports
-Production readiness audits, feature completion metrics, and security reviews.
-- [`docs/reports/PRODUCTION_READINESS.md`](file:///c:/Users/prach/OneDrive/Desktop/Projects/Sentrix/Sentrix/docs/reports/PRODUCTION_READINESS.md) — Production readiness checklist, security verification status, and deployment gates.
-- `docs/reports/Sentrix_Feature_Status_Audit.docx` — Systematic feature status audit and operational verification report.
+### Secondary / Historical Notes
+- [implementation/implementation.md](implementation/implementation.md) — Historical AI/Pinata integration notes (secondary to `ARCHITECTURE.md`).
+- [implementation/frontend-implementation.md](implementation/frontend-implementation.md) — Historical frontend planning notes.
+- [blockchain/blockchain-implementation.md](blockchain/blockchain-implementation.md) & [blockchain/blockchain-setup.md](blockchain/blockchain-setup.md) — Optional/frozen Web3 `EvidenceRegistry.sol` & Pinata notes (not part of the core baseline).
+- `feature-documentation/Sentrix_Features_and_Workflow.docx` & `reports/Sentrix_Feature_Status_Audit.docx` — Legacy binary `.docx` artifacts.

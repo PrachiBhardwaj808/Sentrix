@@ -1,106 +1,68 @@
 # Sentrix Frontend Command Console
 
-The **Sentrix Frontend** is a tactical command-and-control intelligence interface built with Next.js 14 (App Router), Tailwind CSS, TypeScript, and modern GIS/WebRTC mapping libraries.
+The **Sentrix Frontend** is a command-and-control web console built with **Next.js 16 (App Router)**, React 18, TypeScript, Tailwind CSS, Zustand, and Leaflet (`react-leaflet`).
 
 ---
 
-## Architecture Overview
+## Directory Layout
 
-```
+```text
 frontend/
-├── app/                  # Next.js 14 App Router pages & layouts
-│   ├── (console)/        # Authenticated command console layout and navigation shell
-│   ├── alerts/           # Incident log, real-time alert feed, priority triage
-│   ├── auth/             # Tactical biometric / passkey authentication handlers
-│   ├── cameras/          # Live CCTV/NVR matrix, detection rules, stream health
-│   ├── dashboard/        # Operational metrics, threat levels, active sector overview
-│   ├── login/            # Secure guard/operator login portal
-│   ├── map/              # Full-screen GIS sector tactical intelligence map
-│   ├── settings/         # System thresholds, relay configs, telemetry settings
-│   ├── globals.css       # Tailwind utility classes and tactical theme variables
-│   ├── layout.tsx        # Root HTML document and provider wrapper
-│   └── page.tsx          # Sentrix landing page and presentation portal
-├── components/           # Reusable UI component modules
-│   ├── blockchain/       # Cryptographic evidence receipt and chain-of-custody modals
-│   ├── camera/           # Camera telemetry cards, RTSP status indicators
-│   ├── console/          # Command console sidebar, header, operator profile
-│   ├── dashboard/        # Analytics charts, incident frequency widgets
-│   ├── demo/             # Guided demo workflows and interactive simulations
-│   ├── guard/            # Guard duty cards, shift status pills, dispatch controls
-│   ├── map/ & maps/      # Leaflet GIS canvas, tactical markers, route overlays
-│   ├── shared/           # Cross-cutting UI badges, status indicators
-│   ├── theme/            # Tactical theme provider (high-contrast dark mode)
-│   ├── ui/               # Design system primitives (dialogs, tooltips, buttons)
-│   └── video/            # HLS/WebRTC streaming players & local camera test component
-├── hooks/                # Custom React lifecycle and real-time subscription hooks
-├── lib/                  # Shared libraries, utilities, and API adapters
-│   ├── api/              # HTTP REST client and real-time WebSocket connection manager (websocket.ts)
-│   ├── geospatial/       # GIS geometry helpers, coordinate converters
-│   ├── store/            # Client-side Zustand state store (useIBVAPStore.ts) with live WebSocket listeners
-│   ├── auth.ts           # Tactical session management
-│   ├── evidence.ts       # Hash verification and IPFS receipt parsers
-│   ├── firebase.ts       # Firebase client initialization
-│   ├── passkey.ts        # WebAuthn / FIDO2 passkey authentication
-│   ├── reports.ts        # PDF incident report generation
-│   ├── sound.ts          # Tactical alert audio cues
-│   ├── theme.ts          # Color tokens and tactical palettes
-│   └── types.ts          # TypeScript type definitions for domain entities
-├── public/               # Static assets, tactical icons, GIS map pins
-├── tests/                # Frontend component and integration tests
-├── Dockerfile            # Multi-stage production container build
-├── next.config.mjs       # Next.js configuration and API proxy rewrites
-├── package.json          # Dependency specifications and run scripts
-└── tailwind.config.ts    # Tactical UI design tokens and Tailwind theme configuration
+├── app/
+│   ├── (console)/        # Authenticated console shell (dashboard, live-feed, alerts, map, camera-management, guard-duty, admin)
+│   ├── login/            # Operator login (password + 2FA OTP / WebAuthn passkey)
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx          # Landing page
+├── components/
+│   ├── blockchain/       # Secondary evidence verification card
+│   ├── camera/           # ZonePolygonEditor
+│   ├── console/          # ConsoleHeader, ConsoleSidebar, BackendHydrator, OfflineSyncBanner
+│   ├── demo/             # DemoIncidentButton
+│   ├── guard/            # GuardCard, AttendanceHeatmap, ShiftHandoverModal
+│   ├── map/              # SentrixLeafletMap, SentrixIntelligenceMap, MapControls, MapSearchBox
+│   ├── shared/           # TacticalButton, TacticalCard, StatusPill, Modal
+│   └── video/            # CameraVideoFeed, LocalCameraFeed, BoundingBoxOverlay, PTZControls
+├── lib/
+│   ├── api/              # REST client (client.ts) and WebSocket manager (websocket.ts)
+│   ├── geospatial/       # Map search and geospatial helpers
+│   ├── store/            # Zustand store (useIBVAPStore.ts)
+│   └── types.ts
+├── next.config.mjs
+├── package.json
+└── vitest.config.ts
 ```
 
 ---
 
 ## Key Features
 
-- **Tactical Command Center**: High-density, high-contrast dark theme engineered for 24/7 command center operations.
-- **Real-Time WebSocket State Sync**: Automatic bi-directional WebSocket listener streaming live alerts, camera status updates, and dispatch events into the active operator console without requiring manual page reloads.
-- **Interactive GIS Sector Map**: Vector map rendering with live responder positions, camera cones of vision, spatial distance buffers, and shortest-path evacuation routing.
-- **Real-Time Video Matrix**: Multi-grid camera feed monitor with low-latency WebRTC and HLS streaming via MediaMTX relay.
-- **Zero Fabrication Guarantee**: The UI displays honest empty states when backend services report no active data, never generating fictitious alerts or synthetic personnel.
-- **Decentralized Evidence Verification**: Interactive cryptographic verification modal allowing operators to validate incident hashes directly against IPFS and EVM smart contracts.
+- **Live Feed & Local Inference Preview:** `LocalCameraFeed` and `CameraVideoFeed` stream HLS/WebRTC (via MediaMTX) or browser-sampled frames to `POST /api/inference/frame`.
+- **Interactive GIS Map:** Leaflet map rendering camera locations, alerts, road segments, and straight-line nearest-responder results from `/api/map/*`.
+- **Operator-Reviewed Alerts & Dispatch:** Incident log with acknowledge/escalate/resolve actions and 6-digit OTP dispatch verification.
+- **WebSocket State Sync:** Auto-reconnecting client for `/ws/alerts/` when connected to an ASGI backend.
 
 ---
 
-## Setup & Running Locally
+## Setup & Checks
 
-### 1. Install Dependencies
 ```bash
 cd frontend
-npm install
-```
-
-### 2. Configure Environment Variables
-Create a `.env.local` file from `.env.example`:
-```bash
 cp .env.example .env.local
-```
-
-Key environment configurations:
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
-NEXT_PUBLIC_MEDIA_RELAY_URL=http://localhost:8888
-```
-
-### 3. Launch Development Server
-```bash
+npm ci
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
----
-
-## Building for Production
-
-```bash
-# Create optimized production build
-npm run build
-
-# Start production server
-npm start
+Default `.env.local` values:
+```env
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api
+NEXT_PUBLIC_ENABLE_DEMO_MODE=false
+NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 ```
 
+Run checks and unit tests (7 tests across 2 files):
+```bash
+npm run typecheck
+npm test
+npm run build
+```

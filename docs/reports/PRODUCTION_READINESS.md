@@ -1,5 +1,7 @@
 # Sentrix production-readiness record
 
+> **Scope & Transport Note:** Sentrix is focused on hit-and-run vehicle tracing and cross-camera investigation workflows. Note that `docker-compose.production.yml` currently launches `gunicorn config.wsgi:application` (WSGI); serving `/ws/alerts/` WebSockets in production requires switching the backend command to an ASGI server such as `daphne config.asgi:application`.
+
 This document records what is implemented in the local codebase, what was
 verified during this hardening pass, and what must still be completed before a
 real deployment. It is deliberately conservative: a green local test is not a
