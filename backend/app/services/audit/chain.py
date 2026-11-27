@@ -9,13 +9,24 @@ was truthful at the time an event was created.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
 from datetime import datetime, timezone
 from typing import Any, MutableMapping
 
 
 GENESIS_HASH = "0" * 64
-AUDITED_COLLECTIONS = frozenset({"alerts", "activityLog"})
+AUDITED_COLLECTIONS = frozenset({"alerts", "activityLog", "vehicleSightings"})
+
+
+def _hmac_key() -> bytes | None:
+    raw = os.getenv("AUDIT_CHAIN_HMAC_KEY", "").strip()
+    return raw.encode("utf-8") if raw else None
+
+
+def _sign_chain_hash(chain_hash: str, key: bytes) -> str:
+    return hmac.new(key, chain_hash.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def append_chain_entry(
@@ -35,7 +46,7 @@ def append_chain_entry(
     record_id = str(record.get("id") or "")
     content_hash = _content_hash(collection, operation, record)
     chain_hash = _chain_hash(previous_hash, sequence, collection, operation, record_id, content_hash)
-    entry = {
+    entry: dict[str, Any] = {
         "sequence": sequence,
         "collection": collection,
         "operation": operation,
@@ -45,6 +56,9 @@ def append_chain_entry(
         "chainHash": chain_hash,
         "recordedAt": datetime.now(timezone.utc).isoformat(),
     }
+    key = _hmac_key()
+    if key is not None:
+        entry["hmacSignature"] = _sign_chain_hash(chain_hash, key)
     chain.append(entry)
     return entry
 
@@ -53,7 +67,9 @@ def verify_audit_chain(state: MutableMapping[str, Any]) -> dict[str, Any]:
     """Recompute every chain link and return the first broken position."""
 
     chain = state.get("auditChain") or []
+    key = _hmac_key()
     expected_previous = GENESIS_HASH
+    signed_entries = 0
     for index, entry in enumerate(chain, start=1):
         if not isinstance(entry, dict):
             return _failure(index, "entry is not an object")
@@ -71,11 +87,23 @@ def verify_audit_chain(state: MutableMapping[str, Any]) -> dict[str, Any]:
         )
         if str(entry.get("chainHash")) != expected_chain:
             return _failure(index, "chain hash does not match")
+        signature = entry.get("hmacSignature")
+        if signature is not None:
+            signed_entries += 1
+            if key is None:
+                return _failure(index, "HMAC key is required to verify signed entry")
+            expected_sig = _sign_chain_hash(expected_chain, key)
+            if not hmac.compare_digest(str(signature), expected_sig):
+                return _failure(index, "HMAC signature does not match")
+        elif key is not None:
+            return _failure(index, "entry is missing required HMAC signature")
         expected_previous = expected_chain
     return {
         "verified": True,
         "status": "verified",
         "entries": len(chain),
+        "signedEntries": signed_entries,
+        "hmacConfigured": key is not None,
         "lastChainHash": expected_previous if chain else GENESIS_HASH,
         "message": "Audit chain is internally consistent.",
     }
@@ -84,7 +112,7 @@ def verify_audit_chain(state: MutableMapping[str, Any]) -> dict[str, Any]:
 def audit_chain_status(state: MutableMapping[str, Any]) -> dict[str, Any]:
     result = verify_audit_chain(state)
     result["collections"] = sorted(AUDITED_COLLECTIONS)
-    result["mode"] = "local_hash_chain"
+    result["mode"] = "hmac_signed_hash_chain" if _hmac_key() is not None else "local_hash_chain"
     return result
 
 
